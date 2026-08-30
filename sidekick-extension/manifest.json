@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "SideKick Mail Tracker(RJ)",
+  "version": "0.1.1",
+  "description": "Let's Track with Just One Side Kick",
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://mail.google.com/*",
+    "http://localhost:5000/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "index.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://mail.google.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
