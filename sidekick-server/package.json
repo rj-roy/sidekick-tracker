@@ -1,0 +1,26 @@
+{
+  "name": "sidekick-mail-tracker-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck:api": "tsc -p tsconfig.api.json"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mongodb": "^7.6.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.4.0",
+    "@vercel/node": "^9.0.1",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}
