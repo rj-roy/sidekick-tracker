@@ -1,29 +1,41 @@
-import express from "express";
-import cors from "cors";
-import { connectDB, initializeIndexes } from "./database/index.js";
+import { connectDB, initializeIndexes, disconnectDB } from "./database/index.js";
 import { env } from "./config/env.js";
-
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-app.get("/api/health", async (_req, res) => {
-  res.json({ status: "ok", message: "Server is runnig perfectly" });
-});
+import { app } from "./app.js";
 
 const port = env.port;
 
+let server: ReturnType<typeof app.listen> | null = null;
+
 if (env.nodeEnv !== "test") {
-  app.listen(port, async () => {
+  server = app.listen(port, async () => {
     try {
       await connectDB();
       await initializeIndexes();
     } catch (err) {
       console.error("[database] Failed to connect:", err);
     }
-    console.log(`SideKick server listening on http://localhost:${port}`);
+    console.log(`SideKick server listening`);
   });
 }
+
+const gracefulShutdown = (signal: string) => {
+  console.log(`[server] Received ${signal}, shutting down...`);
+
+  if (!server) {
+    process.exit(0);
+  }
+
+  server.close(async () => {
+    try {
+      await disconnectDB();
+    } catch (err) {
+      console.error("[database] Error closing connection:", err);
+    }
+    process.exit(0);
+  });
+};
+
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 
 export { app };

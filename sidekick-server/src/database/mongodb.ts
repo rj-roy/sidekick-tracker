@@ -12,23 +12,23 @@ export async function connectDB(): Promise<Db> {
   await client.connect();
   db = client.db(env.mongodb.dbName);
 
-  console.log(`[database] Connected to MongoDB: ${env.mongodb.dbName}`);
+  console.log(`[database] Connected to MongoDB`);
   return db;
-}
+};
 
 export function getDB(): Db {
   if (!db) {
     throw new ApiError(500, "Database not connected.");
-  }
+  };
   return db;
-}
+};
 
 export function getClient(): MongoClient {
   if (!client) {
     throw new ApiError(500, "Database client not connected.");
-  }
+  };
   return client;
-}
+};
 
 export async function disconnectDB(): Promise<void> {
   if (client) {

@@ -4,15 +4,33 @@ import { ApiError } from "../utils/ApiError.js";
 const getRequiredEnv = (key: string): string => {
   const value = process.env[key];
 
-  if (!value) {
-    throw new ApiError(404, `Missing Env Variable${key}`)
+  if (!value || value.trim() === "") {
+    throw new ApiError(500, `Missing required environment variable: ${key}`);
   };
 
-  return value;
-}
+  return value.trim();
+};
+
+const getFallbackEnv = (key: string, fallback: string): string => {
+  const value = process.env[key];
+  return value && value.trim() !== "" ? value.trim() : fallback;
+};
+
+const getOriginsEnv = (key: string): string[] => {
+  const value = process.env[key];
+
+  if (!value || value.trim() === "") {
+    throw new ApiError(500, `Missing required environment variable: ${key}`);
+  };
+
+  return value
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+};
 
 export const env = {
-  nodeEnv: getRequiredEnv("NODE_ENV"),
+  nodeEnv: getFallbackEnv("NODE_ENV", "development"),
   port: Number(process.env.PORT),
 
   mongodb: {
@@ -44,5 +62,5 @@ export const env = {
     tokenEncryptionKey: getRequiredEnv("TOKEN_ENCRYPTION_KEY"),
   },
 
-  appOrigin: getRequiredEnv("APP_ORIGIN"),
+  appOrigins: getOriginsEnv("APP_ORIGINS"),
 } as const;
