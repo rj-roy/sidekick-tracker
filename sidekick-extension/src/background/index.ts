@@ -1,4 +1,4 @@
-import { API_BASE_URL, OPEN_SIGN_IN_MESSAGE } from "../constants/api";
+import { API_BASE_URL, OPEN_SIGN_IN_MESSAGE } from "../shared/constants/api";
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log("SideKick background installed");

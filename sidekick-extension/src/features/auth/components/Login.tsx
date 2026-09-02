@@ -1,6 +1,6 @@
 import { Mail } from "lucide-react";
 import { useState } from "react";
-import { authApi } from "../../api/auth.api";
+import { authApi } from "../api";
 
 export default function Login() {
   const [signingIn, setSigningIn] = useState(false);
