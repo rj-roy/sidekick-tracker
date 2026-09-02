@@ -1,5 +1,5 @@
 import { ExternalLink, CircleHelp } from "lucide-react";
-import TrackingStatus from "../components/TrackingStatus";
+import TrackingStatus from "../../tracking/components/TrackingStatus";
 
 export default function Dashboard() {
   return (

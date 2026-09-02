@@ -1,5 +1,5 @@
 import { Settings, Mail } from "lucide-react";
-import AuthRouter from "./components/AuthRouter";
+import { MainRouter } from "../features/auth/components";
 
 export default function App() {
   return (
@@ -12,7 +12,7 @@ export default function App() {
           </div>
 
           <span className="text-[15px] font-semibold">
-            TrackMail
+            SideKick
           </span>
         </div>
 
@@ -21,7 +21,7 @@ export default function App() {
         </button>
       </header>
 
-      <AuthRouter />
+      <MainRouter />
     </div>
   );
 }

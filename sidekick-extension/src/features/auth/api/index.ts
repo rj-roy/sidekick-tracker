@@ -1,6 +1,6 @@
-import { apiClient } from "./client";
-import { OPEN_SIGN_IN_MESSAGE } from "../constants/api";
-import type { User } from "../types/auth";
+import { apiClient } from "../../../shared/api";
+import { OPEN_SIGN_IN_MESSAGE } from "../../../shared/constants/api";
+import type { User } from "../types";
 
 export const authApi = {
   me(): Promise<User> {
