@@ -5,9 +5,9 @@ import { AuthService } from "./auth.service.js";
 import { validateLoginCallback } from "./auth.validation.js";
 
 export const AuthController = {
-    getGoogleAuthUrl(req: Request, res: Response) {
+    googleAuthRedirect(req: Request, res: Response) {
         const state = crypto.randomUUID();
-        const url = AuthService.generateGoogleAuthUrl(state);
+        const url = AuthService.getGoogleAuthUrl(state);
 
         res.cookie('oauth_state', state, {
             httpOnly: true,
@@ -28,7 +28,7 @@ export const AuthController = {
         if (!savedState || !state || savedState !== state) {
             throw new ApiError(400, "invalid or expired OAuth state");
         };
-        const { user, tokens } = await AuthService.processGoogleCallback(code);
+        const { user, tokens } = await AuthService.getCallbackCred(code);
 
         res.clearCookie('oauth_state');
 
@@ -48,31 +48,4 @@ export const AuthController = {
             },
         });
     },
-
-    // async getCurrentUser(req: Request, res: Response) {
-    //     const userId = req.cookies?.access_token;
-
-    //     if (!userId) {
-    //         throw new ApiError(401, "Not authenticated");
-    //     }
-
-    //     const user = await AuthService.getCurrentUser(userId);
-
-    //     if (!user) {
-    //         throw new ApiError(401, "User not found");
-    //     }
-
-    //     return ApiResponse.success(res, "User fetched", {
-    //         id: user._id,
-    //         email: user.email,
-    //         name: user.name,
-    //         picture: user.picture,
-    //     });
-    // },
-
-    // async logout(_req: Request, res: Response) {
-    //     res.clearCookie("access_token");
-
-    //     return ApiResponse.success(res, "Logged out successfully");
-    // },
 };

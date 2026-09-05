@@ -6,22 +6,6 @@ const collection = () => getDB().collection(env.mongodb.collections.users);
 
 export const AuthRepository = {
 
-    async findByGoogleId(googleId: string) {
-        return collection().findOne({ googleId });
-    },
-
-    // async create(userData: { googleId: string; email: string; name: string; picture?: string; }) {
-    //     const now = new Date();
-    //     const user = {
-    //         ...userData,
-    //         createdAt: now,
-    //         updatedAt: now,
-    //     };
-
-    //     const result = await collection().insertOne(user);
-    //     return { ...user, _id: result.insertedId };
-    // },
-
     async upsert(userData: { googleId: string; email: string; name: string; picture?: string; }) {
         const now = new Date();
         const result = await collection().findOneAndUpdate(
@@ -43,7 +27,7 @@ export const AuthRepository = {
 
         if (!result) {
             throw new ApiError(500, "Failed to create or update user");
-        }
+        };
 
         return result;
     },
