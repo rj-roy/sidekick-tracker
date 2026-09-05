@@ -51,7 +51,7 @@ export const env = {
   google: {
     clientId: getRequiredEnv("GOOGLE_CLIENT_ID"),
     clientSecret: getRequiredEnv("GOOGLE_CLIENT_SECRET"),
-    redirectUri: getRequiredEnv("GOOGLE_REDIRECT_URI"),
+    redirectUrl: getRequiredEnv("GOOGLE_REDIRECT_URL"),
     authUrl: getRequiredEnv("GOOGLE_AUTH_URL"),
     tokenUrl: getRequiredEnv("GOOGLE_TOKEN_URL"),
     userInfoUrl: getRequiredEnv("GOOGLE_USERINFO_URL"),

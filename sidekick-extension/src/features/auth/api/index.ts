@@ -3,8 +3,9 @@ import { OPEN_SIGN_IN_MESSAGE } from "../../../shared/constants/api";
 import type { User } from "../types";
 
 export const authApi = {
-  me(): Promise<User> {
-    return apiClient.get<{ user: User }>("/api/auth/me").then((data) => data.user);
+  async me(): Promise<User> {
+    const data = await apiClient.get<{ user: User; }>("/api/auth/me");
+    return data.user;
   },
 
   async login(): Promise<void> {
