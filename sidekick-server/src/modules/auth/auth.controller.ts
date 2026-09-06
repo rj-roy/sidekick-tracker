@@ -29,15 +29,6 @@ export const AuthController = {
         };
         const { user, tokens } = await AuthService.getCallbackCred(code);
 
-        // res.clearCookie('oauth_state');
-
-        // res.cookie('atc_tomn', tokens.access_token, {
-        //     httpOnly: true,
-        //     secure: true,
-        //     sameSite: "lax",
-        //     maxAge: tokens.expires_in * 1000,
-        // });
-
         return ApiResponse.success(res, "Login successful", {
             user: {
                 id: user._id,

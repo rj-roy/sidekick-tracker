@@ -1,9 +1,12 @@
-import { getDB } from "../../database/index.js";
-import { MongoServerError } from "mongodb";
+import { ensureDB } from "../../database/index.js";
+import { MongoServerError, type ObjectId } from "mongodb";
 import { env } from "../../config/env.js";
 import { ApiError } from "../../utils/ApiError.js";
 
-const collection = () => getDB().collection(env.mongodb.collections.users);
+const collection = async () => {
+    const db = await ensureDB();
+    return db.collection(env.mongodb.collections.users);
+};
 
 export const AuthRepository = {
 
@@ -11,7 +14,7 @@ export const AuthRepository = {
         const now = new Date();
         let result;
         try {
-            result = await collection().findOneAndUpdate(
+            result = await (await collection()).findOneAndUpdate(
                 { email: userData.email },
                 {
                     $set: {
@@ -32,7 +35,7 @@ export const AuthRepository = {
             if (!(err instanceof MongoServerError) || err.code !== 11000) {
                 throw err;
             }
-            result = await collection().findOne({ email: userData.email });
+            result = await (await collection()).findOne({ email: userData.email });
         }
 
         if (!result) {
@@ -40,5 +43,9 @@ export const AuthRepository = {
         };
 
         return result;
+    },
+
+    async findById(id: ObjectId) {
+        return (await collection()).findOne({ _id: id });
     },
 };

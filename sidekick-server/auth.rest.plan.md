@@ -97,7 +97,7 @@ if (!json?.access_token) {
 ```
 Validate `access_token` presence before use in both token-exchange and userinfo paths.
 
-### 6. Cookie flags environment-correct
+### 6(executed). Cookie flags environment-correct
 **`auth.controller.ts`** — replace hardcoded `secure: true` (blocks traffic on dev
 `http://localhost`) and the hardcoded `'oauth_state'` string with `env` values:
 ```ts
@@ -112,14 +112,14 @@ res.cookie(env.cookies.oauthState, state, {
 ```
 This fixes the existing mismatch (`auth.controller.ts:12,23` vs `env.cookies.oauthState`).
 
-### 7. Remove dead / abandoned cookie code
+### 7(executed). Remove dead / abandoned cookie code
 **`auth.controller.ts`** — delete the commented-out `atc_tomn` block. **Keep** the
 `tokens` destructure in the handler (`auth.controller.ts:28`) — per Fix 3 the
 access/refresh tokens are intentionally captured, not discarded. Storage
 (mailbox/encryption) is deferred; the session plan's callback integration uses
 these tokens if present.
 
-### 8. Lazy `ensureDB()` (serverless-safe)
+### 8(executed). Lazy `ensureDB()` (serverless-safe)
 `auth.repository.ts:6` `getDB()` throws if not connected; under Vercel `connectDB()`
 never runs.
 
@@ -133,7 +133,7 @@ export async function ensureDB(): Promise<Db> {
 **`auth.repository.ts`** — `const collection = () => ensureDB().then(d => d.collection(...))`
 and `await` it in each call. (Same helper the session module will reuse.)
 
-### 8b. Add `AuthRepository.findById` (session-module dependency)
+### 8b(executed). Add `AuthRepository.findById` (session-module dependency)
 The session plan's `requireAuth` resolves `req.user` via `AuthRepository.findById(userId)`
 (`session.plan.md` Dependency direction + `requireAuth`). This must exist in the auth
 module **before** session work.
@@ -145,7 +145,7 @@ async findById(id: ObjectId) {
 }
 ```
 
-### 9. Async handler guard (unhandled rejections)
+### 9(). Async handler guard (unhandled rejections)
 `handleGoogleCallback` is `async` but no middleware catches rejections → thrown
 `ApiError`s become unhandled promise rejections.
 
