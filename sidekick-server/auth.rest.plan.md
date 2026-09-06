@@ -145,7 +145,7 @@ async findById(id: ObjectId) {
 }
 ```
 
-### 9(). Async handler guard (unhandled rejections)
+### 9(executed). Async handler guard (unhandled rejections)
 `handleGoogleCallback` is `async` but no middleware catches rejections → thrown
 `ApiError`s become unhandled promise rejections.
 
@@ -160,7 +160,7 @@ router.get("/google/callback", asyncHandler(AuthController.handleGoogleCallback)
 ```
 The `errorHandler` middleware already normalizes `ApiError` → correct status.
 
-### 10. Rate-limit the auth endpoints
+### 10(executed). Rate-limit the auth endpoints
 
 **Problem:** Vercel serverless creates a **new instance per request** — an
 in-memory rate-limit map resets on every cold start, giving zero protection
