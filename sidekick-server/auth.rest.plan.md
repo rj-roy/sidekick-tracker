@@ -29,7 +29,7 @@ Add an optional `code` field to `ApiError` for stable client handling (default e
 `errorHandler`/`ApiResponse.error` already accepts an optional `error` payload, so the
 `code` can bubble through (`ApiResponse.error(res, err.message, err.statusCode, err.code)`).
 
-### 2. Gate on verified email (security)
+### 2(executed). Gate on verified email (security)
 Requirements doc: "`email` must be verified; becomes the unique key."
 
 **`auth.types.ts`** — add to `GoogleUserInfo`:

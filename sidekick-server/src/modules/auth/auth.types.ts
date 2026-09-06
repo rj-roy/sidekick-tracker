@@ -10,4 +10,5 @@ export interface GoogleUserInfo {
     email: string;
     name: string;
     picture?: string;
+    verified_email?: boolean;
 }

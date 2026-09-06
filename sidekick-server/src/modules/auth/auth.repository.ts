@@ -7,7 +7,7 @@ const collection = () => getDB().collection(env.mongodb.collections.users);
 
 export const AuthRepository = {
 
-    async upsert(userData: { googleId: string; email: string; name: string; picture?: string; }) {
+    async upsert(userData: { googleId: string; email: string; name: string; picture?: string; emailVerified?: boolean; }) {
         const now = new Date();
         let result;
         try {
@@ -18,6 +18,7 @@ export const AuthRepository = {
                         googleId: userData.googleId,
                         name: userData.name,
                         picture: userData.picture,
+                        emailVerified: userData.emailVerified,
                         updatedAt: now,
                     },
                     $setOnInsert: {

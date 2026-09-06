@@ -21,11 +21,16 @@ export const AuthService = {
         const tokens = await exchangeCodeForTokens(code);
         const googleUser = await getUserInfo(tokens.access_token);
 
+        if (!googleUser.verified_email) {
+            throw new ApiError(403, "Google email is not verified");
+        }
+
         const user = await AuthRepository.upsert({
             googleId: googleUser.id,
             email: googleUser.email,
             name: googleUser.name,
             picture: googleUser.picture,
+            emailVerified: !!googleUser.verified_email,
         });
 
         return { user, tokens };
