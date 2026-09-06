@@ -49,7 +49,7 @@ if (!googleUser.verified_email) {
 }
 ```
 
-### 3. Capture + persist refresh token (registration vs re-login)
+### 3(executed). Capture + persist refresh token (registration vs re-login)
 `refresh_token` is returned only on the **first** consent. It must be captured (and,
 per requirements, encrypted later — that is out of scope here, just **captured**).
 
@@ -71,7 +71,7 @@ Keep the token **in the response** of `getCallbackCred` (currently discarded in
 `auth.controller.ts:28`). Actual storage (mailbox/encryption) is deferred; just stop
 discarding it.
 
-### 4. Correct error propagation (stop masking server errors as 401)
+### 4(executed). Correct error propagation (stop masking server errors as 401)
 `getUserInfo` and `exchangeCodeForTokens` throw `401` on any non-OK, which masks
 5xx/rate-limit as client-auth errors.
 

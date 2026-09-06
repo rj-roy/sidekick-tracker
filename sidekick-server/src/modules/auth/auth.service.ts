@@ -42,9 +42,14 @@ const getUserInfo = async (accessToken: string): Promise<GoogleUserInfo> => {
         headers: { Authorization: `Bearer ${accessToken}` },
     });
 
+    if (response.status === 401 || response.status === 403) {
+        throw new ApiError(401, "Google authorization failed");
+    }
+
     if (!response.ok) {
-        throw new ApiError(401, "Failed to fetch user information");
-    };
+        throw new ApiError(502, "Google upstream error");
+    }
+
     return response.json() as Promise<GoogleUserInfo>;
 };
 
@@ -62,8 +67,12 @@ const exchangeCodeForTokens = async (code: string): Promise<GoogleTokenResponse>
         }),
     });
 
+    if (response.status === 401 || response.status === 403) {
+        throw new ApiError(401, "Google authorization failed");
+    }
+
     if (!response.ok) {
-        throw new ApiError(401, "Failed to exchange authorization code");
+        throw new ApiError(502, "Google upstream error");
     }
 
     return response.json() as Promise<GoogleTokenResponse>;
