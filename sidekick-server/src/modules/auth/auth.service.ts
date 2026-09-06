@@ -50,7 +50,13 @@ const getUserInfo = async (accessToken: string): Promise<GoogleUserInfo> => {
         throw new ApiError(502, "Google upstream error");
     }
 
-    return response.json() as Promise<GoogleUserInfo>;
+    const data: unknown = await response.json();
+
+    if (!data || typeof data !== "object" || typeof (data as GoogleUserInfo).email !== "string") {
+        throw new ApiError(502, "Malformed response from Google");
+    }
+
+    return data as GoogleUserInfo;
 };
 
 
@@ -69,13 +75,19 @@ const exchangeCodeForTokens = async (code: string): Promise<GoogleTokenResponse>
 
     if (response.status === 401 || response.status === 403) {
         throw new ApiError(401, "Google authorization failed");
-    }
+    };
 
     if (!response.ok) {
         throw new ApiError(502, "Google upstream error");
+    };
+
+    const data: unknown = await response.json();
+
+    if (!data || typeof data !== "object" || typeof (data as GoogleTokenResponse).access_token !== "string") {
+        throw new ApiError(502, "Malformed response from Google");
     }
 
-    return response.json() as Promise<GoogleTokenResponse>;
+    return data as GoogleTokenResponse;
 };
 
 

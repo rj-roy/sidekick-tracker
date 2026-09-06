@@ -86,7 +86,7 @@ if (!response.ok) {
 ```
 Note: `502 Bad Gateway` accurately reflects an upstream provider failure.
 
-### 5. Runtime-validate provider responses (typing honesty)
+### 5(executed). Runtime-validate provider responses (typing honesty)
 `response.json() as GoogleTokenResponse` asserts types without checking.
 
 **`auth.service.ts`** — add minimal guards after parse:
