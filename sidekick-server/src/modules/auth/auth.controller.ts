@@ -3,15 +3,17 @@ import { ApiResponse } from "../../utils/ApiRsponse.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { AuthService } from "./auth.service.js";
 import { validateLoginCallback } from "./auth.validation.js";
+import { env } from "../../config/env.js";
 
 export const AuthController = {
     googleAuthRedirect(req: Request, res: Response) {
         const state = crypto.randomUUID();
         const url = AuthService.getGoogleAuthUrl(state);
+        const isProd = env.nodeEnv === "production";
 
-        res.cookie('oauth_state', state, {
+        res.cookie(env.cookies.oauthState, state, {
             httpOnly: true,
-            secure: true,
+            secure: isProd,
             sameSite: "lax",
             maxAge: 10 * 60 * 1000,
         });
@@ -20,7 +22,7 @@ export const AuthController = {
 
     async handleGoogleCallback(req: Request, res: Response) {
         const { code, state } = validateLoginCallback(req.query);
-        const savedState = req.cookies?.oauth_state;
+        const savedState = req.cookies?.[env.cookies.oauthState];
 
         if (!savedState || !state || savedState !== state) {
             throw new ApiError(400, "invalid or expired OAuth state");
