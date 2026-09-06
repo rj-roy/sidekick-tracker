@@ -11,7 +11,7 @@ Author: review of `auth.module` scored **11/20**. This plan targets **~18–19/2
 
 ## Root-cause fixes (in priority order)
 
-### 1. Handle OAuth error parameter + replay (correctness/UX)
+### 1(executed). Handle OAuth error parameter + replay (correctness/UX)
 Google redirects back with `?error=access_denied` (user declined) or `error=...`.
 Currently `validateLoginCallback` only reads `code`/`state` and the flow 400s vaguely.
 
