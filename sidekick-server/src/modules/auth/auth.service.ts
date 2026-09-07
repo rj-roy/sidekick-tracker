@@ -9,7 +9,7 @@ export const AuthService = {
             client_id: env.google.clientId,
             redirect_uri: env.google.redirectUrl,
             response_type: "code",
-            scope: "openid email profile",
+            scope: env.google.scope,
             state,
             access_type: 'offline',
             prompt: 'consent'

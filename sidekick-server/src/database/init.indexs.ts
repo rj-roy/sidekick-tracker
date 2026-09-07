@@ -7,6 +7,7 @@ export async function initializeIndexes(): Promise<void> {
   const users = db.collection(env.mongodb.collections.users);
   const trackedEmails = db.collection(env.mongodb.collections.trackedEmails);
   const emailOpens = db.collection(env.mongodb.collections.emailOpens);
+  const googleAccounts = db.collection(env.mongodb.collections.googleAccounts);
 
   await Promise.all([
     users.createIndex({ email: 1 }, { unique: true }),
@@ -17,6 +18,9 @@ export async function initializeIndexes(): Promise<void> {
 
     emailOpens.createIndex({ trackedEmailId: 1, openedAt: -1 }),
     emailOpens.createIndex({ uniqueToken: 1 }),
+
+    googleAccounts.createIndex({ userId: 1 }, { unique: true }),
+    googleAccounts.createIndex({ email: 1 }, { unique: true }),
   ]);
 
   console.log("[database] Indexes initialized");

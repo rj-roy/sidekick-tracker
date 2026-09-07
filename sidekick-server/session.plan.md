@@ -311,7 +311,7 @@ auth module only owns the OAuth handshake.
 
 ## Out of scope (deferred)
 
-- Gmail API / mailbox token storage.
+- Gmail API / google-account token storage.
 - Device-management endpoints (list / revoke-all) — only `/me` + `/logout` now.
 - Stateless signed cookie-cache layer (DB-only sessions per decision).
 - `state` currently stores `{ random, deviceId }`. If richer client-supplied device

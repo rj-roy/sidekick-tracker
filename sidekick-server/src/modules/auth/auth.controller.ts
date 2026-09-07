@@ -4,6 +4,7 @@ import { ApiError } from "../../utils/ApiError.js";
 import { AuthService } from "./auth.service.js";
 import { validateLoginCallback } from "./auth.validation.js";
 import { env } from "../../config/env.js";
+import { GoogleAccountRepository } from "../google-accounts/index.js";
 
 export const AuthController = {
     googleAuthRedirect(req: Request, res: Response) {
@@ -28,6 +29,16 @@ export const AuthController = {
             throw new ApiError(400, "invalid or expired OAuth state");
         };
         const { user, tokens } = await AuthService.getCallbackCred(code);
+
+        if (tokens?.access_token) {
+            await GoogleAccountRepository.upsertTokens(user._id, user.email, {
+                accessToken: tokens.access_token,
+                refreshToken: tokens.refresh_token,
+                tokenType: tokens.token_type,
+                expiresIn: tokens.expires_in,
+                scope: tokens.scope,
+            });
+        }
 
         return ApiResponse.success(res, "Login successful", {
             user: {

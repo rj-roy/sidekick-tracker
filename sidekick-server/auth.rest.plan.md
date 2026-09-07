@@ -207,20 +207,20 @@ belong in this plan (auth owns login/logout and the OAuth handshake). They
 **must** land before/at the same time session starts, because auth calls into
 session for creation and validation.
 
-### A. Mail / Gmail API access from users (deferred until now — capture + store)
+### A(executed). Mail / Gmail API access from users (deferred until now — capture + store)
 
 `session.plan.md` lists *"Gmail API / mailbox token storage"* as out of scope.
 It is auth-adjacent: the refresh token is captured during the OAuth flow and must
-be stored so the mailbox/mail-access layer can call the Gmail API on behalf of
-the user.
+be stored so the google-accounts/mail-access layer can call the Gmail API on
+behalf of the user.
 
 1. **Persist the refresh + access token** captured in Fix 3 (currently returned
    from `getCallbackCred` but discarded in `auth.controller.ts:30`).
-2. **Encrypt at rest** — deferred `utils/crypto.ts` item: AES-256-GCM the
+2. **Encrypt at rest** — `utils/crypto.ts`: AES-256-GCM the
    `refresh_token`/`access_token` before storing (per `TOKEN_ENCRYPTION_KEY`).
-3. **Add mailbox storage** (collection + repository) keyed by `userId`:
-   `userId`, encrypted `refreshToken`, `accessToken`, `expiresAt`, token type,
-   scope, Google account `email`/`id`.
+3. **Add google-account storage** (collection `google_accounts` + repository)
+   keyed by `userId`: `userId`, encrypted `refreshToken`/`accessToken`,
+   plaintext `expiresAt`, `scopes`, Google account `email`.
 4. **Scope note:** current OAuth scope is `openid email profile`. Does **not**
    include Gmail scopes (e.g. `https://www.googleapis.com/auth/gmail.readonly`
    or `.modify`). Determine the needed Gmail scope before login so consent

@@ -40,6 +40,7 @@ export const env = {
       users: getRequiredEnv("USER_COLLECTION"),
       trackedEmails: getRequiredEnv("TRACKED_EMAILS_COLL"),
       emailOpens: getRequiredEnv("OPEN_EMAIL_COLL"),
+      googleAccounts: getRequiredEnv("GOOGLE_ACCOUNTS_COLLECTION"),
     },
   },
 
@@ -55,6 +56,10 @@ export const env = {
     authUrl: getRequiredEnv("GOOGLE_AUTH_URL"),
     tokenUrl: getRequiredEnv("GOOGLE_TOKEN_URL"),
     userInfoUrl: getRequiredEnv("GOOGLE_USERINFO_URL"),
+    scope: getFallbackEnv(
+      "GOOGLE_SCOPE",
+      "openid email profile https://www.googleapis.com/auth/gmail.modify"
+    ),
   },
 
   session: {
