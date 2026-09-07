@@ -200,6 +200,77 @@ fallback for local dev.
 
 ---
 
+## Incomplete auth work moved from `session.plan.md` (auth-owned)
+
+These items were described in `session.plan.md` but are **auth-side** work. They
+belong in this plan (auth owns login/logout and the OAuth handshake). They
+**must** land before/at the same time session starts, because auth calls into
+session for creation and validation.
+
+### A. Mail / Gmail API access from users (deferred until now — capture + store)
+
+`session.plan.md` lists *"Gmail API / mailbox token storage"* as out of scope.
+It is auth-adjacent: the refresh token is captured during the OAuth flow and must
+be stored so the mailbox/mail-access layer can call the Gmail API on behalf of
+the user.
+
+1. **Persist the refresh + access token** captured in Fix 3 (currently returned
+   from `getCallbackCred` but discarded in `auth.controller.ts:30`).
+2. **Encrypt at rest** — deferred `utils/crypto.ts` item: AES-256-GCM the
+   `refresh_token`/`access_token` before storing (per `TOKEN_ENCRYPTION_KEY`).
+3. **Add mailbox storage** (collection + repository) keyed by `userId`:
+   `userId`, encrypted `refreshToken`, `accessToken`, `expiresAt`, token type,
+   scope, Google account `email`/`id`.
+4. **Scope note:** current OAuth scope is `openid email profile`. Does **not**
+   include Gmail scopes (e.g. `https://www.googleapis.com/auth/gmail.readonly`
+   or `.modify`). Determine the needed Gmail scope before login so consent
+   captures a usable refresh token. This may change `getGoogleAuthUrl`'s scope.
+
+### B. Login/logout flow (auth → session handoff)
+
+`session.plan.md` "Auth integration" describes auth-side wiring for the login
+and logout flow. These are the auth-owned edits:
+
+1. **Login start** (`googleAuthRedirect`): accept an optional `deviceId` query
+   param (the extension's stable device id), generate one if absent, and build
+   `state = { random, deviceId }`. Store the serialized `state` in the state
+   cookie (`env.cookies.oauthState`). `state` is currently a plain `uuid` —
+   rework to `{random, deviceId}` (touches `auth.controller.ts`,
+   `auth.service.ts`, `auth.validation.ts` exactly as session plan notes).
+2. **Callback** (`handleGoogleCallback`): after the user upsert, parse
+   `deviceId` + `random` from the validated `state`, derive `platform`/`os`
+   from the `User-Agent` header → build the `device` object, and call
+   `SessionService.createSession(user._id, device, req)` → returns raw
+   `token` + `rotationKey`.
+3. **Set the session cookie**: `env.cookies.raw` HttpOnly cookie holding the
+   raw `token` + `rotationKey` (7d, SameSite=Lax, Secure in prod).
+4. **Clear** the OAuth state cookie (`clearCookie(env.cookies.oauthState)`).
+5. **Return** `{ user, session }` — never the raw token/rotation key in the body.
+
+### C. Session module prerequisites (things auth must provide when calling session)
+
+Before the `session` module starts its own work, auth must deliver these
+prerequisites (dependencies auth already satisfies, listed for completeness):
+
+1. **`AuthRepository.findById(userId)`** — `requireAuth` resolves `req.user` via
+   this (session plan Dependency direction). Already added as Fix 8b. ✅
+2. **`ensureDB()` lazy connect** — session repository ops go through the same
+   helper (serverless-safe). Already in `database/mongodb.ts`. ✅
+3. **User document shape** — session stores only `userId`; `requireAuth`
+   resolves the full user via `findById`. Auth's `upsert` must return/retain
+   `_id` (it does).
+4. **Device binding contract** — auth collects `deviceId` (state) + `platform`/
+   `os` (UA) at login and passes the `device` object to `createSession`. The
+   extension then sends full `X-Device-Info` on later requests; auth/session
+   validate the `deviceId` on every `requireAuth` request (see session plan).
+
+> **Where `/me` and `/logout` live:** handlers + routes are in the **session**
+> module (per `session.plan.md`), NOT in `auth.controller.ts`. Auth only owns
+> the OAuth handshake and the login/logout **handoff** in B above. Session router
+> is mounted by `app.ts` at `/auth` alongside the auth router.
+
+---
+
 ## Files touched
 
 | File | Change |
@@ -216,13 +287,10 @@ fallback for local dev.
 | `utils/ApiError.ts` | optional `code` field |
 
 ## Out of scope (deferred, by design)
-- **Session issuance, `/me`, `/logout`** → `src/modules/session/` (`session.plan.md`).
-- Refresh-token **encryption at rest** (`utils/crypto.ts`) + mailboxes → later.
+- **Session issuance** (`createSession`), **`/me`, `/logout` handlers/routes** → `src/modules/session/` (`session.plan.md`). The **auth handoff** to session (state `{random,deviceId}`, session cookie set, state-cookie clear, device object) is now scoped here in "Incomplete auth work" B above.
+- Refresh-token **encryption at rest** (`utils/crypto.ts`) + **mailbox token storage** → now scoped here in "Incomplete auth work" A above (auth-owned).
 - `requireAuth` middleware → session module.
-- **`state` format change** (embedding `deviceId`) → session integration step
-  (session plan). This plan keeps `state` as the plain `uuid`; the session step
-  reworks it to `{random, deviceId}` in the **same files** (`auth.controller.ts`,
-  `auth.validation.ts`, `auth.service.ts`).
+- **`state` format change** (embedding `deviceId`) → scoped here in "Incomplete auth work" B (touches `auth.controller.ts`, `auth.validation.ts`, `auth.service.ts`).
 - Applying the rate-limit util to `/me` and `/logout` → session module (this plan
   only builds the shared util + applies to login/callback).
 
@@ -233,9 +301,11 @@ Both plans touch `auth.controller.ts` / `auth.validation.ts` / `auth.service.ts`
 1. **Run `auth.rest.plan.md` fully** (fixes 1–10: state stays plain `uuid`,
    error-param, verified-email, tokens captured, correct status codes, cookie
    flags, `ensureDB`, `findById`, asyncHandler, rate-limit util + login/callback).
-2. **Run `session.plan.md` session-integration step** which then reworks
-   `state → {random, deviceId}`, adds session cookie issuance + `createSession`,
-   and mounts the session router.
+2. **Run the "Incomplete auth work" sections above** (A: mail/Gmail access +
+   mailbox storage; B: login/logout state `{random,deviceId}` handoff + session
+   cookie; C: confirm session prerequisites). These land in the same auth files.
+3. **Run `session.plan.md` session-integration step** which then mounts the
+   session router and implements `createSession`/`/me`/`/logout` (session-owned).
 
 This ordering leaves no overlapping edits in flight at the same time.
 
