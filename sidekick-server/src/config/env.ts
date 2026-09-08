@@ -11,11 +11,6 @@ const getRequiredEnv = (key: string): string => {
   return value.trim();
 };
 
-const getFallbackEnv = (key: string, fallback: string): string => {
-  const value = process.env[key];
-  return value && value.trim() !== "" ? value.trim() : fallback;
-};
-
 const getOriginsEnv = (key: string): string[] => {
   const value = process.env[key];
 
@@ -23,14 +18,11 @@ const getOriginsEnv = (key: string): string[] => {
     throw new ApiError(500, `Missing required environment variable: ${key}`);
   };
 
-  return value
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+  return value.split(",").map((origin) => origin.trim()).filter(Boolean);
 };
 
 export const env = {
-  nodeEnv: getFallbackEnv("NODE_ENV", "development"),
+  nodeEnv: getRequiredEnv("NODE_ENV"),
   port: Number(process.env.PORT),
 
   mongodb: {
@@ -56,10 +48,8 @@ export const env = {
     authUrl: getRequiredEnv("GOOGLE_AUTH_URL"),
     tokenUrl: getRequiredEnv("GOOGLE_TOKEN_URL"),
     userInfoUrl: getRequiredEnv("GOOGLE_USERINFO_URL"),
-    scope: getFallbackEnv(
-      "GOOGLE_SCOPE",
-      "openid email profile https://www.googleapis.com/auth/gmail.modify"
-    ),
+    gmailApiUrl: getRequiredEnv("GOOGLE_GMAIL_API_URL"),
+    scope: getRequiredEnv("GOOGLE_SCOPE"),
   },
 
   session: {

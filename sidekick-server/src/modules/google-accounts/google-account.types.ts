@@ -8,6 +8,13 @@ export interface GoogleAccountTokens {
   scope?: string;
 }
 
+export interface StoredGoogleTokens {
+  accessToken: string;
+  refreshToken?: string;
+  tokenType?: string;
+  expiresIn?: number;
+}
+
 export interface GoogleAccount {
   userId: ObjectId;
   email: string;
