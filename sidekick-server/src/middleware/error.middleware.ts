@@ -5,7 +5,7 @@ import { ApiResponse } from "../utils/ApiRsponse.js";
 
 export const errorHandler = (err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof ApiError) {
-    return ApiResponse.error(res, err.message, err.statusCode, err.code);
+    return ApiResponse.error(res, err.message, err.statusCode);
   }
 
   if (env.nodeEnv === "production") {

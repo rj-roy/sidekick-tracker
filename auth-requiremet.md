@@ -83,7 +83,7 @@ Server-led Google OAuth for the SideKick mail tracker extension. The server owns
 
 ### 7. Persist (registration core)
 - `users`: upsert by `email` — `{ googleId: sub, email, name, avatar }`.
-- `google_accounts`: upsert by `userId` — `{ userId, email, encryptedTokens, scopes, expiresAt }` where `accessToken`/`refreshToken` are **AES-256-GCM encrypted** with `TOKEN_ENCRYPTION_KEY`.
+- `mailboxes`: upsert by `googleId` — `{ googleId, email, accessToken, refreshToken, scope, expiresAt }` where `accessToken`/`refreshToken` are **AES-256-GCM encrypted** with `TOKEN_ENCRYPTION_KEY`.
 - Never store or log plaintext tokens.
 
 ### 8. Create session + redirect
@@ -99,12 +99,12 @@ Server-led Google OAuth for the SideKick mail tracker extension. The server owns
 
 ```
 src/integrations/google/google.ts                 — URL builder, token exchange, profile fetch
-src/integrations/google/google-oauth.service.ts   — state gen, callback orchestration, session create, google-accounts upsert
+src/integrations/google/google-oauth.service.ts   — state gen, callback orchestration, session create, mailboxes upsert
 src/utils/crypto.ts                               — AES-256-GCM encrypt/decrypt for tokens
 src/modules/auth/
   ├── auth.controller.ts   — login / callback / me / logout handlers
   ├── auth.service.ts      — orchestrates steps 3–8
-  ├── auth.repository.ts   — users + google-accounts DB operations
+  ├── auth.repository.ts   — users + mailboxes DB operations
   ├── auth.routes.ts       — /api/auth/* router
   └── index.ts
 src/middleware/auth.middleware.ts                 — verify RAW_COOKIE_NAME, attach req.user

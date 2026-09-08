@@ -12,7 +12,7 @@ mail-tracker-server/
 │   │   ├── env.ts
 │   │   ├── cors.ts
 │   │   ├── logger.ts
-│   │   ├── rate-limit.ts             ← Upstash Redis (Vercel) or in-memory fallback (dev)
+│   │   ├── rate-limit.ts
 │   │   └── index.ts
 │   │
 │   ├── database/
@@ -28,16 +28,6 @@ mail-tracker-server/
 │   │   │   ├── auth.repository.ts
 │   │   │   ├── auth.validation.ts
 │   │   │   ├── auth.routes.ts
-│   │   │   └── index.ts
-│   │   │
-│   │   ├── session/
-│   │   │   ├── session.model.ts
-│   │   │   ├── session.index.ts
-│   │   │   ├── session.controller.ts
-│   │   │   ├── session.service.ts
-│   │   │   ├── session.repository.ts
-│   │   │   ├── session.validation.ts
-│   │   │   ├── session.routes.ts
 │   │   │   └── index.ts
 │   │   │
 │   │   ├── users/
@@ -240,7 +230,7 @@ mail-tracker-server/
 │   │   ├── env.ts
 │   │   ├── cors.ts
 │   │   ├── logger.ts
-│   │   ├── rate-limit.ts             ← Upstash Redis (Vercel) or in-memory fallback (dev)
+│   │   ├── rate-limit.ts
 │   │   └── index.ts
 │   │
 │   ├── database/
@@ -256,16 +246,6 @@ mail-tracker-server/
 │   │   │   ├── auth.repository.ts
 │   │   │   ├── auth.validation.ts
 │   │   │   ├── auth.routes.ts
-│   │   │   └── index.ts
-│   │   │
-│   │   ├── session/
-│   │   │   ├── session.model.ts
-│   │   │   ├── session.indexes.ts
-│   │   │   ├── session.controller.ts
-│   │   │   ├── session.service.ts
-│   │   │   ├── session.repository.ts
-│   │   │   ├── session.validation.ts
-│   │   │   ├── session.routes.ts
 │   │   │   └── index.ts
 │   │   │
 │   │   ├── users/
@@ -363,7 +343,7 @@ mail-tracker-server/
 │   │   ├── error.middleware.ts
 │   │   ├── validation.middleware.ts
 │   │   ├── not-found.middleware.ts
-│   │   ├── rate-limit.middleware.ts        ← shared createRateLimit() factory (auth + session)
+│   │   ├── rate-limit.middleware.ts
 │   │   └── upload.middleware.ts
 │   │
 │   ├── routes/
