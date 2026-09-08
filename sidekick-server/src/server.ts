@@ -11,6 +11,7 @@ if (env.nodeEnv !== "test") {
     try {
       await connectDB();
       await initializeIndexes();
+      // TODO: start background jobs here (e.g., startJobs())
     } catch (err) {
       console.error("[database] Failed to connect:", err);
     }
