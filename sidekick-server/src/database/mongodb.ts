@@ -23,11 +23,6 @@ export function getDB(): Db {
   return db;
 };
 
-export async function ensureDB(): Promise<Db> {
-  if (db) return db;
-  return connectDB();
-};
-
 export function getClient(): MongoClient {
   if (!client) {
     throw new ApiError(500, "Database client not connected.");
