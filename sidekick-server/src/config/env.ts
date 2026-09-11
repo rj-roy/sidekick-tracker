@@ -33,7 +33,6 @@ export const env = {
       trackedEmails: getRequiredEnv("TRACKED_EMAILS_COLL"),
       emailOpens: getRequiredEnv("OPEN_EMAIL_COLL"),
       googleAccounts: getRequiredEnv("GOOGLE_ACCOUNTS_COLLECTION"),
-      sessions: getRequiredEnv("SESSIONS_COLLECTION"),
     },
   },
 
@@ -56,9 +55,6 @@ export const env = {
   session: {
     secret: getRequiredEnv("SESSION_SECRET"),
     tokenEncryptionKey: getRequiredEnv("TOKEN_ENCRYPTION_KEY"),
-    expiresInSeconds: Number(process.env.SESSION_EXPIRES_IN_SECONDS || 604800),
-    updateAgeSeconds: Number(process.env.SESSION_UPDATE_AGE_SECONDS || 43200),
-    deviceHeader: (process.env.SESSION_DEVICE_HEADER || "x-device-info").toLowerCase(),
   },
 
   appOrigins: getOriginsEnv("APP_ORIGINS"),

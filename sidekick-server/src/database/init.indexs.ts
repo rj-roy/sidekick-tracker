@@ -1,6 +1,5 @@
 import { getDB } from "./mongodb.js";
 import { env } from "../config/env.js";
-import { createSessionIndexes } from "../modules/session/session.indexes.js";
 
 export async function initializeIndexes(): Promise<void> {
   const db = getDB();
@@ -22,8 +21,6 @@ export async function initializeIndexes(): Promise<void> {
 
     googleAccounts.createIndex({ userId: 1 }, { unique: true }),
     googleAccounts.createIndex({ email: 1 }, { unique: true }),
-
-    createSessionIndexes(db),
   ]);
 
   console.log("[database] Indexes initialized");

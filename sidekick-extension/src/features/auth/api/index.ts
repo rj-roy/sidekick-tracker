@@ -1,22 +1,11 @@
 import { apiClient } from "../../../shared/api";
 import { OPEN_SIGN_IN_MESSAGE } from "../../../shared/constants/api";
-import { ApiClientError } from "../../../shared/utils/errorHandler";
 import type { User } from "../types";
-
-const AUTH_USER_KEY = "authUser";
 
 export const authApi = {
   async me(): Promise<User> {
-    try {
-      const data = await apiClient.get<{ user: User }>("/auth/me");
-      await chrome.storage.local.set({ [AUTH_USER_KEY]: data.user });
-      return data.user;
-    } catch (err) {
-      if (err instanceof ApiClientError && err.status === 401) {
-        await chrome.storage.local.remove(AUTH_USER_KEY);
-      }
-      throw err;
-    }
+    const data = await apiClient.get<{ user: User; }>("/api/auth/me");
+    return data.user;
   },
 
   async login(): Promise<void> {
@@ -24,6 +13,6 @@ export const authApi = {
   },
 
   logout(): Promise<void> {
-    return apiClient.post<void>("/auth/logout");
+    return apiClient.post<void>("/api/auth/logout");
   },
 };

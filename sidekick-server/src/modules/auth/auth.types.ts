@@ -14,8 +14,3 @@ export interface GoogleUserInfo {
     picture?: string;
     verified_email?: boolean;
 }
-
-export interface OAuthState {
-    random: string;
-    deviceId?: string;
-}

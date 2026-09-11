@@ -5,7 +5,6 @@ import { env } from "./config/env.js";
 import { errorHandler, notFound } from "./middleware/error.middleware.js";
 
 import { authRouter } from "./modules/auth/index.js";
-// import { sessionRouter } from "./modules/session/index.js";
 import cookieParser from "cookie-parser";
 
 const app = express();
@@ -26,7 +25,6 @@ app.get("/api/health", async (_req, res) => {
 });
 
 app.use('/auth', authRouter);
-// app.use('/auth', sessionRouter);
 
 app.use(notFound);
 app.use(errorHandler);
