@@ -16,7 +16,6 @@ router.get(
     createRateLimit({ store: rateLimitStore, windowMs: 10 * 60_000, max: 10 }),
     asyncHandler(AuthController.handleGoogleCallback)
 );
-// router.get("/me", AuthController.getCurrentUser);
-// router.post("/logout", AuthController.logout);
+// /me and /logout are owned by the session module (session.routes.ts).
 
 export default router;
