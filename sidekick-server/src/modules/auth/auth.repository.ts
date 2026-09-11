@@ -1,7 +1,7 @@
-import { ensureDB } from "../../database/index.js";
-import { MongoServerError, type ObjectId } from "mongodb";
+import { MongoServerError } from "mongodb";
 import { env } from "../../config/env.js";
 import { ApiError } from "../../utils/ApiError.js";
+import { ensureDB } from "../../database/mongodb.js";
 
 const collection = async () => {
     const db = await ensureDB();
@@ -43,9 +43,5 @@ export const AuthRepository = {
         };
 
         return result;
-    },
-
-    async findById(id: ObjectId) {
-        return (await collection()).findOne({ _id: id });
     },
 };

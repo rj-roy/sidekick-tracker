@@ -1,6 +1,7 @@
-import { connectDB, initializeIndexes, disconnectDB } from "./database/index.js";
 import { env } from "./config/env.js";
 import { app } from "./app.js";
+import { connectDB, disconnectDB } from "./database/mongodb.js";
+import { initializeIndexes } from "./database/init.indexs.js";
 
 const port = env.port;
 

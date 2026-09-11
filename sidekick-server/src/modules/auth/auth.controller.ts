@@ -40,7 +40,7 @@ export const AuthController = {
             });
         }
 
-        return ApiResponse.success(res, "Login successful", {
+        return ApiResponse.success(res, "Account Created. Please login to continue", {
             user: {
                 id: user._id,
                 email: user.email,

@@ -1,8 +1,8 @@
-import { ensureDB } from "../../database/index.js";
 import type { ObjectId, Document } from "mongodb";
 import { env } from "../../config/env.js";
 import { encrypt, decrypt } from "../../utils/crypto.js";
 import type { GoogleAccountTokens } from "./google-account.types.js";
+import { ensureDB } from "../../database/mongodb.js";
 
 const collection = async () => {
   const db = await ensureDB();
@@ -58,13 +58,5 @@ export const GoogleAccountRepository = {
       },
       { upsert: true, returnDocument: "after" }
     );
-  },
-
-  async findByUserId(userId: ObjectId) {
-    return (await collection()).findOne({ userId });
-  },
-
-  async findByEmail(email: string) {
-    return (await collection()).findOne({ email });
   },
 };
