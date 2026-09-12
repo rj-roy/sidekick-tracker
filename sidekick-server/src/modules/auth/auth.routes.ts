@@ -3,6 +3,7 @@ import { AuthController } from "./auth.controller.js";
 import { asyncHandler } from "../../utils/async-handler.js";
 import { createRateLimit } from "../../middleware/rate-limit.middleware.js";
 import { requireAuth } from "../../middleware/auth.middleware.js";
+import { requireCsrf } from "../../middleware/csrf.middleware.js";
 
 const router = Router();
 
@@ -17,6 +18,6 @@ router.get(
     asyncHandler(AuthController.handleGoogleCallback)
 );
 router.get("/me", requireAuth, asyncHandler(AuthController.getMe));
-router.post("/logout", requireAuth, asyncHandler(AuthController.logout));
+router.post("/logout", requireAuth, requireCsrf, asyncHandler(AuthController.logout));
 
 export default router;

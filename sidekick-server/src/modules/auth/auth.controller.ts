@@ -7,6 +7,8 @@ import { env } from "../../config/env.js";
 import { GoogleAccountRepository } from "../google-accounts/index.js";
 import { SessionService } from "../session/session.service.js";
 import { AuthRepository } from "./auth.repository.js";
+import { randomBytes } from "crypto";
+import { setCsrfCookie } from "../../middleware/csrf.middleware.js";
 
 export const AuthController = {
     googleAuthRedirect(req: Request, res: Response) {
@@ -55,6 +57,10 @@ export const AuthController = {
                     sameSite: 'lax',
                     maxAge: env.session.expiresInSeconds * 1000,
                 });
+
+                // set a double-submit CSRF token cookie for client-side requests
+                const csrfToken = randomBytes(16).toString('hex');
+                setCsrfCookie(res, csrfToken);
 
                 res.clearCookie(env.cookies.oauthState, {
                     httpOnly: true,
