@@ -45,7 +45,6 @@ export const GoogleAccountRepository = {
       email,
       encryptedTokens,
       scopes,
-      expiresAt: tokens.expiresIn,
       updatedAt: now,
     };
     
@@ -80,6 +79,10 @@ export const GoogleAccountRepository = {
 
     const refreshToken = tokens.refreshToken ?? storedTokens.refreshToken;
 
+    if (typeof tokens.expiresIn !== "number") {
+      throw new ApiError(502, "Missing token expiration from Google");
+    };
+
     const encryptedTokens = encrypt(
       JSON.stringify({
         accessToken: tokens.accessToken,
@@ -88,12 +91,7 @@ export const GoogleAccountRepository = {
       })
     );
 
-    const expiresAt =
-      typeof tokens.expiresIn === "number"
-        ? new Date(
-          Date.now() + tokens.expiresIn * 1000
-        )
-        : existing.expiresAt;
+    const expiresAt = new Date(Date.now() + tokens.expiresIn * 1000);
 
     return (await collection()).findOneAndUpdate(
       { userId },

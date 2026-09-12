@@ -51,13 +51,13 @@ export const env = {
     userInfoUrl: getRequiredEnv("GOOGLE_USERINFO_URL"),
     gmailApiUrl: getRequiredEnv("GOOGLE_GMAIL_API_URL"),
     scope: getRequiredEnv("GOOGLE_SCOPE"),
+    tokenRefreshThresholdSeconds: Number(process.env.GOOGLE_TOKEN_REFRESH_THRESHOLD || 300),
   },
 
   session: {
     secret: getRequiredEnv("SESSION_SECRET"),
     tokenEncryptionKey: getRequiredEnv("TOKEN_ENCRYPTION_KEY"),
     expiresInSeconds: Number(process.env.SESSION_EXPIRES_IN_SECONDS || 604800),
-    updateAgeSeconds: Number(process.env.SESSION_UPDATE_AGE_SECONDS || 43200),
   },
 
   appOrigins: getOriginsEnv("APP_ORIGINS"),

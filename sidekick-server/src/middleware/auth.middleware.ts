@@ -13,7 +13,7 @@ declare global {
     }
 }
 
-export const requireAuth = async (req: Request, _res: Response, next: NextFunction) => {
+export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith("Bearer ")
         ? authHeader.slice(7)
@@ -23,8 +23,8 @@ export const requireAuth = async (req: Request, _res: Response, next: NextFuncti
         throw new ApiError(401, "Authentication required");
     }
 
-    const session = await SessionService.validateSession(token);
-    req.userId = session.userId;
+    const result = await SessionService.validateSession(token);
+    req.userId = result.session.userId;
     req.sessionToken = token;
 
     next();

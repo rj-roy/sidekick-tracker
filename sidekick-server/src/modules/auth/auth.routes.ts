@@ -18,6 +18,7 @@ router.get(
     asyncHandler(AuthController.handleGoogleCallback)
 );
 router.get("/me", requireAuth, asyncHandler(AuthController.getMe));
+router.get("/csrf", requireAuth, asyncHandler(AuthController.getCsrfToken));
 router.post("/logout", requireAuth, requireCsrf, asyncHandler(AuthController.logout));
 
 export default router;

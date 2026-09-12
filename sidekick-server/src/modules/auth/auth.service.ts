@@ -39,7 +39,7 @@ export const AuthService = {
         return { user, tokens };
     },
 
-    async getValidAccessToken(userId: ObjectId): Promise<string> {
+async getValidAccessToken(userId: ObjectId): Promise<string> {
         const userAccount = await GoogleAccountRepository.findByUserId(userId);
 
         if (!userAccount) {
@@ -52,11 +52,9 @@ export const AuthService = {
             throw new ApiError(401, "Missing access token");
         };
 
-        if(!userAccount.expiresAt){
-            throw new ApiError(401, "undefined session validation");
-        };
+        const thresholdMs = env.google.tokenRefreshThresholdSeconds * 1000;
 
-        if (userAccount.expiresAt.getTime() > Date.now() + 60_000) {
+        if (userAccount.expiresAt && userAccount.expiresAt.getTime() > Date.now() + thresholdMs) {
             return decryptedTokens.accessToken;
         };
 
@@ -170,5 +168,3 @@ const refreshAccessToken = async (refreshToken: string): Promise<GoogleTokenResp
 
     return data as GoogleTokenResponse;
 };
-
-

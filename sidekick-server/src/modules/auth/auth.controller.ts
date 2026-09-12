@@ -7,8 +7,7 @@ import { env } from "../../config/env.js";
 import { GoogleAccountRepository } from "../google-accounts/index.js";
 import { SessionService } from "../session/session.service.js";
 import { AuthRepository } from "./auth.repository.js";
-import { randomBytes } from "crypto";
-import { setCsrfCookie } from "../../middleware/csrf.middleware.js";
+import { csrfTokenFor } from "../../middleware/csrf.middleware.js";
 
 export const AuthController = {
     googleAuthRedirect(req: Request, res: Response) {
@@ -44,6 +43,18 @@ export const AuthController = {
             });
         }
 
+        const data: {
+            user: { id: string; email: string; name: string; picture?: string };
+            csrfToken?: string;
+        } = {
+            user: {
+                id: user._id.toHexString(),
+                email: user.email,
+                name: user.name,
+                picture: user.picture,
+            },
+        };
+
         if (user && tokens) {
             const userAgent = req.get('user-agent') || "unknown";
             const ip = req.ip || "unknown";
@@ -58,26 +69,17 @@ export const AuthController = {
                     maxAge: env.session.expiresInSeconds * 1000,
                 });
 
-                // set a double-submit CSRF token cookie for client-side requests
-                const csrfToken = randomBytes(16).toString('hex');
-                setCsrfCookie(res, csrfToken);
-
                 res.clearCookie(env.cookies.oauthState, {
                     httpOnly: true,
                     secure: env.nodeEnv === "production",
                     sameSite: "lax",
                 });
+
+                data.csrfToken = csrfTokenFor(token);
             };
         };
 
-        return ApiResponse.success(res, "Login Succeed", {
-            user: {
-                id: user._id,
-                email: user.email,
-                name: user.name,
-                picture: user.picture,
-            },
-        });
+        return ApiResponse.success(res, "Login Succeed", data);
     },
 
     async getMe(req: Request, res: Response) {
@@ -97,6 +99,17 @@ export const AuthController = {
                 name: user.name,
                 picture: user.picture,
             },
+            csrfToken: req.sessionToken ? csrfTokenFor(req.sessionToken) : undefined,
+        });
+    },
+
+    async getCsrfToken(req: Request, res: Response) {
+        if (!req.sessionToken) {
+            throw new ApiError(401, "Authentication required");
+        }
+
+        return ApiResponse.success(res, "Success", {
+            csrfToken: csrfTokenFor(req.sessionToken),
         });
     },
 

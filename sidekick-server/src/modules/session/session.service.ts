@@ -12,11 +12,10 @@ export const SessionService = {
         const expiresAt = new Date(now.getTime() + env.session.expiresInSeconds * 1000);
 
         for (let attempt = 0; attempt < 2; attempt++) {
-            const secrets = generateSecrets();
+            const token = generateToken();
             const doc: SessionDoc = {
                 userId,
-                sessionIdHash: hash(secrets.token),
-                rotationKeyHash: hash(secrets.rotationKey),
+                sessionIdHash: hash(token),
                 createdAt: now,
                 expiresAt: expiresAt,
                 lastSeenAt: now,
@@ -30,7 +29,7 @@ export const SessionService = {
                     throw new ApiError(501, "Internal Server Error!");
                 };
 
-                return { token: secrets.token };
+                return { token };
 
             } catch (err) {
                 if (err instanceof ApiError && err.code === "SESSION_COLLISION" && attempt === 0) {
@@ -43,7 +42,7 @@ export const SessionService = {
         throw new ApiError(500, "Failed to create session", "SESSION_CREATE_FAILED");
     },
 
-    async validateSession(token: string): Promise<WithId<SessionDoc>> {
+    async validateSession(token: string): Promise<{ session: WithId<SessionDoc> }> {
         const sessionIdHash = hash(token);
         const session = await SessionRepository.findBySessionIdHash(sessionIdHash);
 
@@ -60,7 +59,7 @@ export const SessionService = {
         }
 
         await SessionRepository.touchSession(sessionIdHash, new Date());
-        return session;
+        return { session };
     },
 
     async revokeSession(token: string, revokeReason: string): Promise<void> {
@@ -68,9 +67,6 @@ export const SessionService = {
     },
 };
 
-const generateSecrets = (): { token: string, rotationKey: string } => ({
-    token: randomBytes(32).toString('base64url'),
-    rotationKey: randomBytes(32).toString('base64'),
-});
+const generateToken = (): string => randomBytes(32).toString('base64url');
 
 const hash = (value: string): string => createHash("sha256").update(value).digest("hex");
