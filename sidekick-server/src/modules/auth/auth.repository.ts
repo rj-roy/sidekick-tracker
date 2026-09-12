@@ -1,4 +1,5 @@
 import { MongoServerError } from "mongodb";
+import type { ObjectId } from "mongodb";
 import { env } from "../../config/env.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { ensureDB } from "../../database/mongodb.js";
@@ -43,5 +44,9 @@ export const AuthRepository = {
         };
 
         return result;
+    },
+
+    async findById(id: ObjectId) {
+        return await (await collection()).findOne({ _id: id });
     },
 };

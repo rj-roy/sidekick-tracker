@@ -21,4 +21,22 @@ export const SessionRepository = {
             throw error;
         };
     },
+
+    async findBySessionIdHash(sessionIdHash: string): Promise<WithId<SessionDoc> | null> {
+        return await (await collection()).findOne({ sessionIdHash });
+    },
+
+    async touchSession(sessionIdHash: string, lastSeenAt: Date): Promise<void> {
+        await (await collection()).updateOne(
+            { sessionIdHash },
+            { $set: { lastSeenAt } }
+        );
+    },
+
+    async revokeSession(sessionIdHash: string, revokeReason: string): Promise<void> {
+        await (await collection()).updateOne(
+            { sessionIdHash, revokedAt: { $exists: false } },
+            { $set: { revokedAt: new Date(), revokeReason } }
+        );
+    },
 };

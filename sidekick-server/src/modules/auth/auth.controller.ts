@@ -6,6 +6,7 @@ import { validateLoginCallback } from "./auth.validation.js";
 import { env } from "../../config/env.js";
 import { GoogleAccountRepository } from "../google-accounts/index.js";
 import { SessionService } from "../session/session.service.js";
+import { AuthRepository } from "./auth.repository.js";
 
 export const AuthController = {
     googleAuthRedirect(req: Request, res: Response) {
@@ -71,5 +72,39 @@ export const AuthController = {
                 picture: user.picture,
             },
         });
+    },
+
+    async getMe(req: Request, res: Response) {
+        if (!req.userId) {
+            throw new ApiError(401, "Authentication required");
+        }
+
+        const user = await AuthRepository.findById(req.userId);
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+
+        return ApiResponse.success(res, "Success", {
+            user: {
+                id: user._id,
+                email: user.email,
+                name: user.name,
+                picture: user.picture,
+            },
+        });
+    },
+
+    async logout(req: Request, res: Response) {
+        if (req.sessionToken) {
+            await SessionService.revokeSession(req.sessionToken, "logout");
+        }
+
+        res.clearCookie(env.cookies.raw, {
+            httpOnly: true,
+            secure: env.nodeEnv === "production",
+            sameSite: "lax",
+        });
+
+        return ApiResponse.success(res, "Logged out");
     },
 };
