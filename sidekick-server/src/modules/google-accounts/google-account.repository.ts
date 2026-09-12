@@ -3,6 +3,8 @@ import { env } from "../../config/env.js";
 import { encrypt, decrypt } from "../../utils/crypto.js";
 import type { GoogleAccountTokens } from "./google-account.types.js";
 import { ensureDB } from "../../database/mongodb.js";
+import { ApiError } from "../../utils/ApiError.js";
+import { StoredGoogleTokens } from "../auth/auth.types.js";
 
 const collection = async () => {
   const db = await ensureDB();
@@ -36,7 +38,6 @@ export const GoogleAccountRepository = {
         accessToken: tokens.accessToken,
         refreshToken,
         tokenType: tokens.tokenType,
-        expiresIn: tokens.expiresIn,
       })
     );
 
@@ -44,8 +45,10 @@ export const GoogleAccountRepository = {
       email,
       encryptedTokens,
       scopes,
+      expiresAt: tokens.expiresIn,
       updatedAt: now,
     };
+    
     if (typeof tokens.expiresIn === "number") {
       set.expiresAt = new Date(Date.now() + tokens.expiresIn * 1000);
     }
@@ -58,5 +61,56 @@ export const GoogleAccountRepository = {
       },
       { upsert: true, returnDocument: "after" }
     );
+  },
+
+  async updateTokens(userId: ObjectId, tokens: GoogleAccountTokens) {
+    const now = new Date();
+
+    const existing = await (await collection()).findOne({ userId });
+
+    if (!existing?.encryptedTokens) {
+      throw new ApiError(404, "Google account not found");
+    };
+
+    const storedTokens = JSON.parse(decrypt(existing.encryptedTokens)) as StoredGoogleTokens;
+
+    if (typeof storedTokens.refreshToken !== "string") {
+      throw new ApiError(401, "Google authorization required");
+    };
+
+    const refreshToken = tokens.refreshToken ?? storedTokens.refreshToken;
+
+    const encryptedTokens = encrypt(
+      JSON.stringify({
+        accessToken: tokens.accessToken,
+        refreshToken,
+        tokenType: tokens.tokenType,
+      })
+    );
+
+    const expiresAt =
+      typeof tokens.expiresIn === "number"
+        ? new Date(
+          Date.now() + tokens.expiresIn * 1000
+        )
+        : existing.expiresAt;
+
+    return (await collection()).findOneAndUpdate(
+      { userId },
+      {
+        $set: {
+          encryptedTokens,
+          expiresAt,
+          updatedAt: now,
+        },
+      },
+      {
+        returnDocument: "after",
+      }
+    );
+  },
+
+  async findByUserId(userId: ObjectId) {
+    return await (await collection()).findOne({ userId });
   },
 };
