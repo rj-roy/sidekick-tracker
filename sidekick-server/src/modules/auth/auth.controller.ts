@@ -5,6 +5,7 @@ import { AuthService } from "./auth.service.js";
 import { validateLoginCallback } from "./auth.validation.js";
 import { env } from "../../config/env.js";
 import { GoogleAccountRepository } from "../google-accounts/index.js";
+import { SessionService } from "../session/session.service.js";
 
 export const AuthController = {
     googleAuthRedirect(req: Request, res: Response) {
@@ -40,7 +41,27 @@ export const AuthController = {
             });
         }
 
-        //call the session
+        if (user && tokens) {
+            const userAgent = req.get('user-agent') || "unknown";
+            const ip = req.ip || "unknown";
+
+            const { token } = await SessionService.createSession(user._id, userAgent, ip);
+
+            if (token) {
+                res.cookie(env.cookies.raw, token, {
+                    httpOnly: true,
+                    secure: env.nodeEnv === 'production',
+                    sameSite: 'lax',
+                    maxAge: env.session.expiresInSeconds * 1000,
+                });
+
+                res.clearCookie(env.cookies.oauthState, {
+                    httpOnly: true,
+                    secure: env.nodeEnv === "production",
+                    sameSite: "lax",
+                });
+            };
+        };
 
         return ApiResponse.success(res, "Login Succeed", {
             user: {
