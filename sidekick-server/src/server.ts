@@ -2,6 +2,7 @@ import { env } from "./config/env.js";
 import { app } from "./app.js";
 import { connectDB, disconnectDB } from "./database/mongodb.js";
 import { initializeIndexes } from "./database/init.indexs.js";
+import { startJobs } from "./jobs/index.js";
 
 const port = env.port;
 
@@ -12,7 +13,7 @@ if (env.nodeEnv !== "test") {
     try {
       await connectDB();
       await initializeIndexes();
-      // TODO: start background jobs here (e.g., startJobs())
+      startJobs();
     } catch (err) {
       console.error("[database] Failed to connect:", err);
     }

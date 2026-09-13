@@ -111,4 +111,8 @@ export const GoogleAccountRepository = {
   async findByUserId(userId: ObjectId) {
     return await (await collection()).findOne({ userId });
   },
+
+  async deleteByUserId(userId: ObjectId) {
+    await (await collection()).deleteOne({ userId });
+  },
 };

@@ -49,6 +49,7 @@ export const env = {
     authUrl: getRequiredEnv("GOOGLE_AUTH_URL"),
     tokenUrl: getRequiredEnv("GOOGLE_TOKEN_URL"),
     userInfoUrl: getRequiredEnv("GOOGLE_USERINFO_URL"),
+    revokeUrl: getRequiredEnv("GOOGLE_REVOKE_URL"),
     gmailApiUrl: getRequiredEnv("GOOGLE_GMAIL_API_URL"),
     scope: getRequiredEnv("GOOGLE_SCOPE"),
     tokenRefreshThresholdSeconds: Number(process.env.GOOGLE_TOKEN_REFRESH_THRESHOLD || 300),
@@ -58,6 +59,8 @@ export const env = {
     secret: getRequiredEnv("SESSION_SECRET"),
     tokenEncryptionKey: getRequiredEnv("TOKEN_ENCRYPTION_KEY"),
     expiresInSeconds: Number(process.env.SESSION_EXPIRES_IN_SECONDS || 604800),
+    rotationIntervalSeconds: Number(process.env.SESSION_ROTATION_INTERVAL_SECONDS || 86400),
+    rotationGraceSeconds: Number(process.env.SESSION_ROTATION_GRACE_SECONDS || 600),
   },
 
   appOrigins: getOriginsEnv("APP_ORIGINS"),

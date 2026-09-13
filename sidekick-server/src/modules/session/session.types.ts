@@ -12,6 +12,9 @@ export interface SessionDoc {
   revokedAt?: Date;
   revokeReason?: string;
 
+  rotatedAt?: Date;
+  rotatedToHash?: string;
+
   userAgent?: string;
   ipAddress?: string;
 };

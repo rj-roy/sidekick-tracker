@@ -5,8 +5,8 @@ import { env } from "../config/env.js";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
-export const csrfTokenFor = (sessionToken: string): string =>
-  createHmac("sha256", env.session.secret).update(sessionToken).digest("base64url");
+export const csrfTokenFor = (sessionId: string): string =>
+  createHmac("sha256", env.session.secret).update(sessionId).digest("base64url");
 
 const isTrustedOrigin = (origin: string): boolean => {
   if (env.appOrigins.includes(origin)) return true;
@@ -23,11 +23,11 @@ export const requireCsrf = (req: Request, _res: Response, next: NextFunction) =>
   }
 
   const headerToken = req.get("x-csrf-token");
-  if (!req.sessionToken || !headerToken) {
+  if (!req.sessionId || !headerToken) {
     throw new ApiError(403, "Invalid or missing CSRF token");
   }
 
-  const expected = Buffer.from(csrfTokenFor(req.sessionToken));
+  const expected = Buffer.from(csrfTokenFor(req.sessionId));
   const actual = Buffer.from(headerToken);
 
   if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {

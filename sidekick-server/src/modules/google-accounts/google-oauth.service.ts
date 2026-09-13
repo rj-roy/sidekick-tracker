@@ -42,6 +42,35 @@ export const GoogleOAuthService = {
         );
         return tokens.access_token;
     },
+
+    async revokeAccount(userId: ObjectId): Promise<void> {
+        const userAccount = await GoogleAccountRepository.findByUserId(userId);
+
+        if (userAccount?.encryptedTokens) {
+            let stored: StoredGoogleTokens | undefined;
+            try {
+                stored = JSON.parse(decrypt(userAccount.encryptedTokens)) as StoredGoogleTokens;
+            } catch {
+                stored = undefined;
+            }
+
+            const token = stored?.refreshToken ?? stored?.accessToken;
+
+            if (token) {
+                try {
+                    await fetch(env.google.revokeUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: new URLSearchParams({ token }),
+                    });
+                } catch {
+                    // Revocation is best-effort; the local record is removed regardless.
+                }
+            }
+        }
+
+        await GoogleAccountRepository.deleteByUserId(userId);
+    },
 };
 
 const refreshAccessToken = async (refreshToken: string): Promise<GoogleTokenResponse> => {

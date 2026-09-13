@@ -39,4 +39,11 @@ export const SessionRepository = {
             { $set: { revokedAt: new Date(), revokeReason } }
         );
     },
+
+    async markRotated(sessionIdHash: string, rotatedToHash: string): Promise<void> {
+        await (await collection()).updateOne(
+            { sessionIdHash },
+            { $set: { rotatedToHash, rotatedAt: new Date() } }
+        );
+    },
 };

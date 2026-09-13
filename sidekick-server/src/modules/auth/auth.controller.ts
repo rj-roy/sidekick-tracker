@@ -59,9 +59,9 @@ export const AuthController = {
             const userAgent = req.get('user-agent') || "unknown";
             const ip = req.ip || "unknown";
 
-            const { token } = await SessionService.createSession(user._id, userAgent, ip);
+            const { token, sessionId } = await SessionService.createSession(user._id, userAgent, ip);
 
-            if (token) {
+            if (token && sessionId) {
                 res.cookie(env.cookies.raw, token, {
                     httpOnly: true,
                     secure: env.nodeEnv === 'production',
@@ -75,7 +75,7 @@ export const AuthController = {
                     sameSite: "lax",
                 });
 
-                data.csrfToken = csrfTokenFor(token);
+                data.csrfToken = csrfTokenFor(sessionId);
             };
         };
 
@@ -99,17 +99,17 @@ export const AuthController = {
                 name: user.name,
                 picture: user.picture,
             },
-            csrfToken: req.sessionToken ? csrfTokenFor(req.sessionToken) : undefined,
+            csrfToken: req.sessionId ? csrfTokenFor(req.sessionId) : undefined,
         });
     },
 
     async getCsrfToken(req: Request, res: Response) {
-        if (!req.sessionToken) {
+        if (!req.sessionId) {
             throw new ApiError(401, "Authentication required");
         }
 
         return ApiResponse.success(res, "Success", {
-            csrfToken: csrfTokenFor(req.sessionToken),
+            csrfToken: csrfTokenFor(req.sessionId),
         });
     },
 
