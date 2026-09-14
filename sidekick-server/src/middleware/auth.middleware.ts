@@ -17,6 +17,7 @@ declare global {
     }
 }
 
+//reviewd
 const extractToken = (
     req: Request
 ): { token: string | undefined; viaBearer: boolean } => {
@@ -33,6 +34,7 @@ const extractToken = (
     return { token: req.cookies?.[env.cookies.raw], viaBearer: false };
 };
 
+//reviewed
 const ensureBearerOrigin = (req: Request): void => {
     const origin = req.get("origin");
 
@@ -46,7 +48,8 @@ const ensureBearerOrigin = (req: Request): void => {
     }
 };
 
-export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
+//reviewed, todo: untrackted
+export const authenticator = async (req: Request, res: Response, next: NextFunction) => {
     const { token, viaBearer } = extractToken(req);
 
     if (!token) {
@@ -72,7 +75,11 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
         if (viaBearer) {
             res.setHeader("x-session-token", result.rotatedToken);
         } else {
-            res.cookie(env.cookies.raw, result.rotatedToken, cookieOptions(env.session.expiresInSeconds * 1000));
+            res.cookie(
+                env.cookies.raw,
+                result.rotatedToken,
+                cookieOptions(env.session.expiresInSeconds * 1000)
+            );
         }
 
         res.setHeader("x-csrf-token", csrfTokenFor(result.rotatedSessionId));

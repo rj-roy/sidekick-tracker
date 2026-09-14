@@ -2,7 +2,7 @@ import { Router } from "express";
 import { AuthController } from "./auth.controller.js";
 import { asyncHandler } from "../../utils/async-handler.js";
 import { createRateLimit } from "../../middleware/rate-limit.middleware.js";
-import { requireAuth } from "../../middleware/auth.middleware.js";
+import { authenticator } from "../../middleware/auth.middleware.js";
 import { requireCsrf } from "../../middleware/csrf.middleware.js";
 
 const router = Router();
@@ -19,39 +19,39 @@ router.get(
 );
 router.get(
     "/me",
-    requireAuth,
+    authenticator,
     createRateLimit({ windowMs: 60_000, limit: 60 }),
     asyncHandler(AuthController.getMe)
 );
 router.get(
     "/csrf",
-    requireAuth,
+    authenticator,
     createRateLimit({ windowMs: 60_000, limit: 30 }),
     asyncHandler(AuthController.getCsrfToken)
 );
 router.get(
     "/sessions",
-    requireAuth,
+    authenticator,
     createRateLimit({ windowMs: 60_000, limit: 30 }),
     asyncHandler(AuthController.listSessions)
 );
 router.delete(
     "/sessions/:sessionId",
-    requireAuth,
+    authenticator,
     requireCsrf,
     createRateLimit({ windowMs: 60_000, limit: 15 }),
     asyncHandler(AuthController.revokeSession)
 );
 router.post(
     "/logout-all",
-    requireAuth,
+    authenticator,
     requireCsrf,
     createRateLimit({ windowMs: 60_000, limit: 10 }),
     asyncHandler(AuthController.logoutAll)
 );
 router.post(
     "/logout",
-    requireAuth,
+    authenticator,
     requireCsrf,
     createRateLimit({ windowMs: 60_000, limit: 10 }),
     asyncHandler(AuthController.logout)

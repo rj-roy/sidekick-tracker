@@ -4,7 +4,7 @@ import { ipKeyGenerator } from "express-rate-limit";
 import { GoogleAccountController } from "./google-account.controller.js";
 import { asyncHandler } from "../../utils/async-handler.js";
 import { createRateLimit } from "../../middleware/rate-limit.middleware.js";
-import { requireAuth } from "../../middleware/auth.middleware.js";
+import { authenticator } from "../../middleware/auth.middleware.js";
 import { requireCsrf } from "../../middleware/csrf.middleware.js";
 
 const userAwareKey = (req: Request): string =>
@@ -14,14 +14,14 @@ const router = Router();
 
 router.get(
     "/",
-    requireAuth,
+    authenticator,
     createRateLimit({ windowMs: 60_000, limit: 60, keyGenerator: userAwareKey }),
     asyncHandler(GoogleAccountController.getAccount)
 );
 
 router.post(
     "/refresh",
-    requireAuth,
+    authenticator,
     createRateLimit({ windowMs: 60_000, limit: 10, keyGenerator: userAwareKey }),
     requireCsrf,
     asyncHandler(GoogleAccountController.refreshToken)
@@ -29,7 +29,7 @@ router.post(
 
 router.delete(
     "/",
-    requireAuth,
+    authenticator,
     createRateLimit({ windowMs: 60_000, limit: 10, keyGenerator: userAwareKey }),
     requireCsrf,
     asyncHandler(GoogleAccountController.disconnect)

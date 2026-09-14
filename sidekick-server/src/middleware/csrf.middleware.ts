@@ -6,8 +6,10 @@ import { logSecurityEvent } from "../utils/security-log.js";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
-export const csrfTokenFor = (sessionId: string): string =>
-  createHmac("sha256", env.session.secret).update(sessionId).digest("base64url");
+//reviewed
+export const csrfTokenFor = (sessionId: string): string => {
+  return createHmac("sha256", env.session.secret).update(sessionId).digest("base64url");
+};
 
 const isTrustedOrigin = (origin: string): boolean => {
   if (env.appOrigins.includes(origin)) return true;

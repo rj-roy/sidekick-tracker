@@ -22,10 +22,12 @@ export const SessionRepository = {
         };
     },
 
+    //reviewed
     async findBySessionIdHash(sessionIdHash: string): Promise<WithId<SessionDoc> | null> {
         return await (await collection()).findOne({ sessionIdHash });
     },
 
+    //reviewed
     async touchSession(sessionIdHash: string, lastSeenAt: Date): Promise<void> {
         await (await collection()).updateOne(
             { sessionIdHash },
