@@ -55,19 +55,46 @@ const oauthVerifierCookieName = getRequiredEnv("VERIFIER_COOKIE_NAME");
 const hostify = (name: string): string =>
   isProduction && !name.startsWith("__Host-") ? `__Host-${name}` : name;
 
+const shannonEntropy = (value: string): number => {
+  const freq: Record<string, number> = {};
+  for (const ch of value) freq[ch] = (freq[ch] ?? 0) + 1;
+
+  let entropy = 0;
+  for (const count of Object.values(freq)) {
+    const p = count / value.length;
+    entropy -= p * Math.log2(p);
+  }
+
+  return entropy;
+};
+
 const sessionSecret = getRequiredEnv("SESSION_SECRET");
 if (sessionSecret.length < 32) {
   throw new ApiError(500, "SESSION_SECRET must be at least 32 characters long");
 }
 
+if (shannonEntropy(sessionSecret) < 3) {
+  throw new ApiError(
+    500,
+    "SESSION_SECRET has insufficient entropy; generate one with: openssl rand -base64 48"
+  );
+}
+
 const tokenEncryptionKey = getRequiredEnv("TOKEN_ENCRYPTION_KEY");
-if (Buffer.from(tokenEncryptionKey, "base64").length !== 32) {
+const tokenEncryptionKeyBytes = Buffer.from(tokenEncryptionKey, "base64");
+if (tokenEncryptionKeyBytes.length !== 32) {
   throw new ApiError(500, "TOKEN_ENCRYPTION_KEY must be a 32-byte base64 encoded value");
+}
+
+if (new Set(tokenEncryptionKeyBytes).size <= 1) {
+  throw new ApiError(500, "TOKEN_ENCRYPTION_KEY must not be a repeated-byte key");
 }
 
 const sessionExpiresInSeconds = positiveInt("SESSION_EXPIRES_IN_SECONDS", 604800);
 const rotationIntervalSeconds = nonNegativeInt("SESSION_ROTATION_INTERVAL_SECONDS", 86400);
-const rotationGraceSeconds = nonNegativeInt("SESSION_ROTATION_GRACE_SECONDS", 600);
+const rotationGraceSeconds = nonNegativeInt("SESSION_ROTATION_GRACE_SECONDS", 15);
+const revokeOnHighRiskAnomaly =
+  (process.env.REVOKE_ON_HIGH_RISK_ANOMALY ?? "false").toLowerCase() === "true";
 
 const googleRedirectUrl = getRequiredEnv("GOOGLE_REDIRECT_URL");
 if (isProduction) {
@@ -153,6 +180,7 @@ export const env = {
     expiresInSeconds: sessionExpiresInSeconds,
     rotationIntervalSeconds,
     rotationGraceSeconds,
+    revokeOnHighRiskAnomaly,
   },
 
   jobs: {

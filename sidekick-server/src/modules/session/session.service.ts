@@ -6,6 +6,7 @@ import { SessionDoc } from "./session.types.js";
 import { SessionRepository } from "./session.repository.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { logSecurityEvent } from "../../utils/security-log.js";
+import { uaFamily } from "../../utils/ua.js";
 
 const TOKEN_REGEX = /^[A-Za-z0-9_-]{43,}$/;
 
@@ -85,6 +86,14 @@ export const SessionService = {
             throw new ApiError(401, "Authentication required", "SESSION_REVOKED");
         }
 
+        if (session.expiresAt.getTime() <= Date.now()) {
+            logSecurityEvent("SESSION_EXPIRED", {
+                userId: userIdHex,
+                sessionId: session._id.toHexString(),
+            });
+            throw new ApiError(401, "Authentication required", "SESSION_EXPIRED");
+        }
+
         if (session.rotatedToHash) {
             const graceMs = env.session.rotationGraceSeconds * 1000;
             const rotatedAt = session.rotatedAt?.getTime() ?? 0;
@@ -96,16 +105,8 @@ export const SessionService = {
             return { session };
         }
 
-        if (session.expiresAt.getTime() <= Date.now()) {
-            logSecurityEvent("SESSION_EXPIRED", {
-                userId: userIdHex,
-                sessionId: session._id.toHexString(),
-            });
-            throw new ApiError(401, "Authentication required", "SESSION_EXPIRED");
-        }
-
         if (rotate) {
-            this.detectAnomaly(session, rotate);
+            await this.detectAnomaly(session, rotate);
         }
 
         const now = new Date();
@@ -165,19 +166,41 @@ export const SessionService = {
         return revoked;
     },
 
-    detectAnomaly(session: WithId<SessionDoc>, rotate: { userAgent: string; ipAddress: string }) {
-        if (session.ipAddress && session.ipAddress !== rotate.ipAddress) {
+    async detectAnomaly(session: WithId<SessionDoc>, rotate: { userAgent: string; ipAddress: string }) {
+        const ipChanged =
+            session.ipAddress !== undefined && session.ipAddress !== null && session.ipAddress !== rotate.ipAddress;
+        const uaChanged =
+            session.userAgent !== undefined && session.userAgent !== null && session.userAgent !== rotate.userAgent;
+
+        if (ipChanged) {
             logSecurityEvent("SESSION_IP_CHANGED", {
                 userId: session.userId.toHexString(),
                 sessionId: session._id.toHexString(),
             });
         }
 
-        if (session.userAgent && session.userAgent !== rotate.userAgent) {
+        if (uaChanged) {
             logSecurityEvent("SESSION_UA_CHANGED", {
                 userId: session.userId.toHexString(),
                 sessionId: session._id.toHexString(),
             });
+        }
+
+        const familyChanged =
+            session.userAgent !== undefined &&
+            rotate.userAgent !== undefined &&
+            uaFamily(session.userAgent) !== uaFamily(rotate.userAgent);
+
+        if (ipChanged && familyChanged) {
+            logSecurityEvent("SESSION_HIGH_RISK_ANOMALY", {
+                userId: session.userId.toHexString(),
+                sessionId: session._id.toHexString(),
+            });
+
+            if (env.session.revokeOnHighRiskAnomaly) {
+                await SessionRepository.revokeSession(session.sessionIdHash, "high-risk-anomaly");
+                throw new ApiError(401, "Authentication required", "SESSION_REVOKED");
+            }
         }
     },
 };

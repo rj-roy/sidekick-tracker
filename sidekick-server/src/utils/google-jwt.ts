@@ -102,7 +102,7 @@ const parseClaims = (payloadB64: string): GoogleIdTokenClaims => {
 
 export const verifyGoogleIdToken = async (
   idToken: string,
-  expectedNonce?: string
+  expectedNonce: string
 ): Promise<GoogleIdTokenClaims> => {
   const parts = idToken.split(".");
 
@@ -146,7 +146,7 @@ export const verifyGoogleIdToken = async (
     throw new ApiError(401, "id_token audience mismatch", "INVALID_ID_TOKEN");
   }
 
-  if (expectedNonce && claims.nonce !== expectedNonce) {
+  if (claims.nonce !== expectedNonce) {
     throw new ApiError(401, "id_token nonce mismatch", "INVALID_ID_TOKEN");
   }
 

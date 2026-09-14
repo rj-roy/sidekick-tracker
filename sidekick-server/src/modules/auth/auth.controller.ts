@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { timingSafeEqual } from "crypto";
 import { ObjectId } from "mongodb";
 import { ApiResponse } from "../../utils/ApiRsponse.js";
 import { ApiError } from "../../utils/ApiError.js";
@@ -42,91 +43,106 @@ export const AuthController = {
     },
 
     async handleGoogleCallback(req: Request, res: Response) {
-        const { code, state } = validateLoginCallback(req.query);
-        const savedState = req.cookies?.[env.cookies.oauthState];
-
-        if (!savedState || !state || savedState !== state) {
-            logSecurityEvent("OAUTH_STATE_MISMATCH");
-            throw new ApiError(400, "OAuth authentication failed", "OAUTH_ERROR");
+        const clearOAuthCookies = (): void => {
+            res.clearCookie(env.cookies.oauthState, clearCookieOptions());
+            res.clearCookie(env.cookies.oauthVerifier, clearCookieOptions());
         };
-
-        let verifier = "";
-        let nonce: string | undefined;
 
         try {
-            const pkceRaw = req.cookies?.[env.cookies.oauthVerifier];
-            if (typeof pkceRaw === "string" && pkceRaw) {
-                const parsed = JSON.parse(pkceRaw) as { v?: string; n?: string };
-                verifier = typeof parsed.v === "string" ? parsed.v : "";
-                nonce = typeof parsed.n === "string" ? parsed.n : undefined;
+            const { code, state } = validateLoginCallback(req.query);
+            const savedState = req.cookies?.[env.cookies.oauthState];
+
+            const stateMatches =
+                typeof savedState === "string" &&
+                state.length === savedState.length &&
+                timingSafeEqual(Buffer.from(savedState), Buffer.from(state));
+
+            if (!stateMatches) {
+                logSecurityEvent("OAUTH_STATE_MISMATCH");
+                throw new ApiError(400, "OAuth authentication failed", "OAUTH_ERROR");
             }
-        } catch {
-            // malformed verifier cookie — proceed; token verification still runs
-        }
 
-        if (!verifier) {
-            logSecurityEvent("OAUTH_LOGIN_FAILURE", { reason: "missing-verifier" });
-            throw new ApiError(400, "OAuth authentication failed", "OAUTH_ERROR");
-        }
+            let verifier = "";
+            let nonce = "";
 
-        const callbackCred = async (): Promise<Awaited<ReturnType<typeof AuthService.getCallbackCred>>> => {
             try {
-                return await AuthService.getCallbackCred(code, verifier, nonce ?? "");
-            } catch (err: unknown) {
-                logSecurityEvent("OAUTH_LOGIN_FAILURE", { message: err instanceof Error ? err.message : "unknown" });
-                throw err;
+                const pkceRaw = req.cookies?.[env.cookies.oauthVerifier];
+                if (typeof pkceRaw === "string" && pkceRaw) {
+                    const parsed = JSON.parse(pkceRaw) as { v?: string; n?: string };
+                    verifier = typeof parsed.v === "string" ? parsed.v : "";
+                    nonce = typeof parsed.n === "string" ? parsed.n : "";
+                }
+            } catch {
+                // malformed verifier cookie — proceed; token verification still runs
             }
-        };
 
-        const { user, tokens } = await callbackCred();
+            if (!verifier || !nonce) {
+                logSecurityEvent("OAUTH_LOGIN_FAILURE", {
+                    reason: nonce ? "missing-verifier" : "missing-nonce",
+                });
+                throw new ApiError(400, "OAuth authentication failed", "OAUTH_ERROR");
+            }
 
-        if (tokens?.access_token) {
-            const normalizedEmail = user.email.toLowerCase().trim();
-
-            await GoogleAccountRepository.upsertTokens(user._id, normalizedEmail, {
-                accessToken: tokens.access_token,
-                refreshToken: tokens.refresh_token,
-                tokenType: tokens.token_type,
-                expiresIn: tokens.expires_in,
-                scope: tokens.scope,
-            });
-
-            logSecurityEvent("GOOGLE_ACCOUNT_CONNECTED", {
-                userId: user._id.toHexString(),
-            });
-        }
-
-        const data: {
-            user: { id: string; email: string; name: string; picture?: string };
-            csrfToken?: string;
-        } = {
-            user: {
-                id: user._id.toHexString(),
-                email: user.email,
-                name: user.name,
-                picture: user.picture,
-            },
-        };
-
-        if (tokens) {
-            const userAgent = req.get('user-agent') || "unknown";
-            const ip = req.ip || "unknown";
-
-            const { token, sessionId } = await SessionService.createSession(user._id, userAgent, ip);
-
-            if (token && sessionId) {
-                logSecurityEvent("OAUTH_LOGIN_SUCCESS", { userId: user._id.toHexString(), sessionId });
-
-                res.cookie(env.cookies.raw, token, cookieOptions(env.session.expiresInSeconds * 1000));
-
-                res.clearCookie(env.cookies.oauthState, clearCookieOptions());
-                res.clearCookie(env.cookies.oauthVerifier, clearCookieOptions());
-
-                data.csrfToken = csrfTokenFor(sessionId);
+            const callbackCred = async (): Promise<Awaited<ReturnType<typeof AuthService.getCallbackCred>>> => {
+                try {
+                    return await AuthService.getCallbackCred(code, verifier, nonce);
+                } catch (err: unknown) {
+                    logSecurityEvent("OAUTH_LOGIN_FAILURE", { message: err instanceof Error ? err.message : "unknown" });
+                    throw err;
+                }
             };
-        };
 
-        return ApiResponse.success(res, "Login Succeed", data);
+            const { user, tokens } = await callbackCred();
+
+            if (tokens?.access_token) {
+                const normalizedEmail = user.email.toLowerCase().trim();
+
+                await GoogleAccountRepository.upsertTokens(user._id, normalizedEmail, {
+                    accessToken: tokens.access_token,
+                    refreshToken: tokens.refresh_token,
+                    tokenType: tokens.token_type,
+                    expiresIn: tokens.expires_in,
+                    scope: tokens.scope,
+                });
+
+                logSecurityEvent("GOOGLE_ACCOUNT_CONNECTED", {
+                    userId: user._id.toHexString(),
+                });
+            }
+
+            const data: {
+                user: { id: string; email: string; name: string; picture?: string };
+                csrfToken?: string;
+            } = {
+                user: {
+                    id: user._id.toHexString(),
+                    email: user.email,
+                    name: user.name,
+                    picture: user.picture,
+                },
+            };
+
+            if (tokens) {
+                const userAgent = req.get('user-agent') || "unknown";
+                const ip = req.ip || "unknown";
+
+                const { token, sessionId } = await SessionService.createSession(user._id, userAgent, ip);
+
+                if (token && sessionId) {
+                    logSecurityEvent("OAUTH_LOGIN_SUCCESS", { userId: user._id.toHexString(), sessionId });
+
+                    res.cookie(env.cookies.raw, token, cookieOptions(env.session.expiresInSeconds * 1000));
+
+                    data.csrfToken = csrfTokenFor(sessionId);
+                };
+            };
+
+            clearOAuthCookies();
+            return ApiResponse.success(res, "Login Succeed", data);
+        } catch (err) {
+            clearOAuthCookies();
+            throw err;
+        }
     },
 
     async getMe(req: Request, res: Response) {

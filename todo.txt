@@ -1,462 +1,489 @@
-## Overall verdict: **Mostly secure, but not fully production-hardened yet**
+I checked the **new uploaded `sidekick-server` code again from the actual source files**, excluding `.md` files. I also checked the extension authentication flow because the server explicitly supports Bearer sessions for it.
 
-You've fixed the major issues I previously identified:
+### Verdict
 
-* ✅ PKCE implemented
-* ✅ OAuth `state` protection
-* ✅ OAuth `nonce`
-* ✅ Google ID token signature verification
-* ✅ `iss` validation
-* ✅ `aud` validation
-* ✅ `exp` / future `iat` validation
-* ✅ Google signing-key refresh/cache
-* ✅ Email normalization
-* ✅ Google `sub` used as `googleId`
-* ✅ Unique Google ID index
-* ✅ AES-256-GCM for stored sensitive tokens
-* ✅ 256-bit random session tokens
-* ✅ Only session hashes stored in DB
-* ✅ HttpOnly cookies
-* ✅ Secure cookies in production
-* ✅ `__Host-` prefix in production
-* ✅ HTTPS enforcement
-* ✅ Session expiration
-* ✅ Session rotation with an atomic claim
-* ✅ Rotation race substantially addressed
-* ✅ CSRF token updated when a session rotates
-* ✅ Timing-safe CSRF comparison
-* ✅ Explicit Chrome extension origin allowlist
-* ✅ Session revocation
-* ✅ Logout-all
-* ✅ Session management/revocation
-* ✅ Request body limit
-* ✅ Environment validation
-* ✅ Security event logging
-* ✅ OAuth endpoint rate limits
-* ✅ Helmet
+**The authentication is now strong, but I would not call it 100% production-secure yet.**
 
-### The session rotation fix is now much better
+I don't see a straightforward critical auth bypass, session-token forgery path, or OAuth signature-verification bypass.
 
-Your new logic:
+I'd rate it around **8.5–9/10**.
 
-```text
-Create replacement session
-        ↓
-claimRotation(
-  old hash,
-  rotatedAt doesn't exist
-)
-        ↓
-Only ONE concurrent request wins
-        ↓
-Losers delete their newly-created session
-```
-
-This fixes the race I pointed out before.
-
-And this is also correctly handled now:
-
-```ts
-if (result.rotatedToken && result.rotatedSessionId) {
-    req.sessionId = result.rotatedSessionId;
-    req.sessionToken = result.rotatedToken;
-
-    res.cookie(...);
-    res.setHeader("x-csrf-token", csrfTokenFor(result.rotatedSessionId));
-}
-```
-
-So the **new session ID and CSRF token are synchronized**. Good fix.
+However, I found **3 things I would definitely fix**.
 
 ---
 
-# Remaining issues I would still fix
+## 1. 🔴 Require the OAuth nonce — this is still not fully enforced
 
-## 1. ⚠️ Old rotated session can still authenticate during grace period
-
-This code:
+You correctly generate a nonce:
 
 ```ts
-if (session.rotatedToHash) {
-    const graceMs = env.session.rotationGraceSeconds * 1000;
+const nonce = generateNonce();
+```
 
-    if (Date.now() - rotatedAt > graceMs) {
-        throw new ApiError(...);
-    }
+and send it to Google:
 
-    return { session };
+```ts
+nonce: options.nonce,
+```
+
+You also store it:
+
+```ts
+JSON.stringify({ v: codeVerifier, n: nonce })
+```
+
+And your JWT verifier supports nonce verification:
+
+```ts
+if (expectedNonce && claims.nonce !== expectedNonce) {
+    throw ...
 }
 ```
 
-During the grace period, the **old token remains valid**.
+### But here's the problem
 
-That means if an attacker steals the old token, they can continue making authenticated requests for up to:
-
-```text
-SESSION_ROTATION_GRACE_SECONDS
-```
-
-Your default is 10 minutes.
-
-### Why this is the main remaining security concern
-
-Imagine:
-
-```text
-12:00 attacker steals old token
-12:01 legitimate user triggers rotation
-12:01 old token marked rotated
-12:01–12:11 attacker can still authenticate
-```
-
-Also, the old token doesn't receive the replacement token because the server only stores:
+In the callback:
 
 ```ts
-rotatedToHash
+let nonce: string | undefined;
 ```
 
-—not the raw replacement token, which is correct because you should never store it.
+If the cookie is malformed or doesn't contain `n`, you eventually do:
 
-### My recommendation
+```ts
+AuthService.getCallbackCred(code, verifier, nonce ?? "");
+```
 
-For a normal browser cookie session, **you probably don't need a 10-minute grace period**.
+Then:
 
-Use something much shorter, such as:
+```ts
+verifyGoogleIdToken(tokens.id_token, nonce);
+```
+
+Because `nonce` becomes `""`, this condition:
+
+```ts
+if (expectedNonce && claims.nonce !== expectedNonce)
+```
+
+doesn't execute.
+
+So you have:
 
 ```text
-0–30 seconds
+nonce cookie missing
+       ↓
+nonce = ""
+       ↓
+verifyGoogleIdToken(..., "")
+       ↓
+nonce NOT checked
 ```
 
-If the grace period exists specifically for concurrent requests, even:
+### Fix
 
-```text
-5–15 seconds
+Make nonce mandatory:
+
+```ts
+if (!nonce) {
+    throw new ApiError(
+        400,
+        "OAuth authentication failed",
+        "OAUTH_ERROR"
+    );
+}
 ```
 
-may be enough.
+before calling `getCallbackCred()`.
+
+And preferably make the service signature:
+
+```ts
+getCallbackCred(
+    code: string,
+    codeVerifier: string,
+    nonce: string
+)
+```
+
+instead of allowing an optional nonce.
 
 **Severity: Medium**
 
----
-
-## 2. ⚠️ Session expiration is checked after `rotatedToHash`
-
-Your order is:
-
-```ts
-if (session.rotatedToHash) {
-   ...
-   return { session };
-}
-
-if (session.expiresAt.getTime() <= Date.now()) {
-   ...
-}
-```
-
-So a rotated session that is already expired could theoretically enter the grace-period branch first.
-
-It should be:
-
-```ts
-if (session.expiresAt.getTime() <= Date.now()) {
-    throw ...
-}
-
-if (session.rotatedToHash) {
-    ...
-}
-```
-
-The secure validation order should generally be:
-
-```text
-1. token format
-2. session exists
-3. revoked?
-4. expired?
-5. rotated?
-6. anomaly detection
-7. touch / rotate
-```
-
-This is a **small but real logic bug**.
-
-**Severity: Low–Medium**
+This is the most important remaining OAuth issue.
 
 ---
 
-## 3. ⚠️ `state` comparison should ideally be timing-safe
+# 2. 🔴 Your `upsertByEmail()` can potentially re-bind an existing account
+
+This is the other thing I would change.
 
 You have:
 
 ```ts
-savedState !== state
+upsertByEmail(userData)
 ```
 
-For OAuth state, this is not a major practical vulnerability because the value is random and server-side cookie protected.
-
-Still, for consistency:
+which does:
 
 ```ts
-crypto.timingSafeEqual(...)
+$set: {
+    googleId: userData.googleId,
+    ...
+}
 ```
 
-would be better.
+So an existing user:
 
-More importantly, validate both values are expected lengths before comparison.
+```text
+User
+googleId = GOOGLE_A
+email = user@example.com
+```
 
-**Severity: Low**
+could potentially become:
+
+```text
+googleId = GOOGLE_B
+```
+
+if the email-based fallback is reached.
+
+Your normal Google login path already has a verified Google `sub`, so **you don't actually need to silently replace an existing Google identity based on email**.
+
+### Safer rule
+
+If email exists:
+
+```text
+email exists
+      ↓
+does googleId match?
+   /        \
+ yes         no
+ ↓           ↓
+login       reject / explicit account-linking flow
+```
+
+Don't do:
+
+```text
+email matches
+     ↓
+replace googleId
+```
+
+I'd remove the automatic `upsertByEmail()` identity takeover behavior.
+
+This is especially important if you ever add another authentication provider.
+
+**Severity: Medium–High depending on account history/provider design**
 
 ---
 
-## 4. ⚠️ OAuth cookies aren't cleared on failed authentication
+# 3. 🟠 Bearer session token is now your biggest client-side concern
 
-You clear them only after successful login:
+I checked the extension too.
+
+The extension does this:
 
 ```ts
-res.clearCookie(env.cookies.oauthState, ...)
-res.clearCookie(env.cookies.oauthVerifier, ...)
+const token = stored[SESSION_STORAGE_KEY];
+
+Authorization: `Bearer ${token}`
 ```
 
-If this happens:
-
-```text
-state mismatch
-Google rejects code
-invalid ID token
-PKCE exchange failure
-```
-
-the OAuth cookies remain until expiration.
-
-They're short-lived, so this isn't a serious vulnerability, but better behavior is to clear them whenever the callback completes, including failures.
-
-For example, ensure cleanup using `finally` around the callback process.
-
-**Severity: Low**
-
----
-
-## 5. ⚠️ Your server starts listening before MongoDB is confirmed connected
-
-Currently:
+And the background service worker copies the server's session cookie:
 
 ```ts
-server = app.listen(port, async () => {
-    try {
-        await connectDB();
-        await initializeIndexes();
-        startJobs();
-    }
-});
+chrome.cookies.get(...)
 ```
 
-This means the server can accept requests before:
-
-```text
-MongoDB connected
-indexes initialized
-```
-
-For authentication, I would reverse it:
-
-```text
-connect DB
-    ↓
-initialize indexes
-    ↓
-start server
-```
-
-Otherwise, under deployment/startup conditions, requests could reach auth endpoints before the database is ready.
-
-**Severity: Medium operational/security reliability**
-
----
-
-## 6. ⚠️ `SESSION_SECRET` length is checked, but entropy isn't
-
-You require:
+into:
 
 ```ts
-if (sessionSecret.length < 32)
+chrome.storage.session
 ```
 
-Good, but this accepts:
+This means the raw authentication token exists outside the HttpOnly cookie.
+
+That's intentional for your extension architecture, but it means:
 
 ```text
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+HttpOnly protection
+       ↓
+doesn't protect the copied extension token
 ```
 
-which is 32 characters but terrible cryptographically.
-
-For a production secret, generate something like:
-
-```text
-randomBytes(32).toString("base64")
-```
-
-You don't necessarily need to implement entropy detection in code, but ensure the deployment secret is genuinely random.
-
-Same principle for other secrets.
-
-**Severity: Configuration-dependent**
-
----
-
-## 7. ⚠️ IP/User-Agent changes are only logged, not acted on
-
-You do:
+The good news is that you're using:
 
 ```ts
-detectAnomaly(session, rotate);
+chrome.storage.session
 ```
 
-and log:
+rather than ordinary web `localStorage`, which is much better.
 
-```text
-SESSION_IP_CHANGED
-SESSION_UA_CHANGED
-```
+### I would keep this architecture if the extension needs it.
 
-That's good for detection.
+But make sure:
 
-But a stolen session token from a completely different:
+* content scripts cannot directly access the session token
+* arbitrary extension messages cannot request the token
+* only trusted extension contexts use it
+* never put it in page-accessible storage
+* never expose it through DOM/window globals
 
-```text
-IP + User-Agent
-```
-
-still works.
-
-I **would not automatically revoke on IP change**, because mobile users, VPNs, proxies, etc. change IPs.
-
-But you could add risk rules:
-
-```text
-IP changed + radically different UA
-        ↓
-log high-risk event
-        ↓
-optionally revoke / require reauthentication
-```
-
-Not mandatory for your current application.
-
-**Severity: Enhancement**
+From the code I checked, I **don't see the token being deliberately exposed to the Gmail page**, which is good.
 
 ---
 
-# One important thing: your Bearer token support changes your threat model
+# Things you fixed correctly
 
-You accept:
+I rechecked these specifically.
 
-```text
-Authorization: Bearer <session token>
-```
-
-and also:
+### OAuth
 
 ```text
-HttpOnly Cookie
+✅ state
+✅ timing-safe state comparison
+✅ PKCE S256
+✅ nonce generation
+✅ ID-token signature validation
+✅ RS256 enforcement
+✅ Google issuer validation
+✅ Google audience validation
+✅ expiration validation
+✅ future-issued-token check
+✅ Google JWKS retrieval
+✅ key rotation handling
 ```
 
-This means your session token isn't purely protected by `HttpOnly` cookies, because somewhere a client may possess the raw token to send it as a Bearer token.
-
-If Sidekick's Chrome extension needs Bearer authentication, that's understandable.
-
-But then **do not store the raw session token in ordinary extension `localStorage`**.
-
-If your architecture allows it, prefer:
+### Sessions
 
 ```text
-Web app → HttpOnly cookie
-Chrome extension → carefully managed token storage
+✅ 256-bit random session tokens
+✅ SHA-256 hash stored in DB
+✅ raw token not stored in DB
+✅ expiration
+✅ revocation
+✅ logout
+✅ logout all
+✅ individual session revocation
+✅ session listing
+✅ atomic rotation claim
+✅ rotation grace reduced to 15 seconds
+✅ expired checked BEFORE rotated session
 ```
 
-or separate authentication/session mechanisms for browser extension and web clients.
-
-The server-side implementation itself is okay—the important question is **where the client stores the Bearer token**.
+That last two changes directly fixed the issues I identified previously.
 
 ---
 
-# My corrected validation order
+# CSRF looks good
 
-Change this part of `validateSession()`:
-
-```text
-CURRENT:
-
-exists
-↓
-revoked
-↓
-rotated
-↓
-expired
-```
-
-to:
+This is now solid:
 
 ```text
-RECOMMENDED:
-
-exists
-↓
-revoked
-↓
-expired
-↓
-rotated
-↓
-anomaly detection
-↓
-rotation/touch
+SameSite=Lax
++
+HttpOnly
++
+Secure production cookie
++
+Origin validation
++
+HMAC session-bound CSRF token
++
+timingSafeEqual
++
+CSRF on POST/DELETE authentication operations
 ```
 
-That is the most concrete code fix I'd make immediately.
+And you fixed the overly broad extension-origin trust:
+
+```ts
+env.appExtensions.includes(origin)
+```
+
+instead of accepting every:
+
+```text
+chrome-extension://*
+```
+
+That's good.
 
 ---
 
-# Final assessment
+# Session rotation is now good
 
-### Is your authentication secure?
+This part is considerably better.
 
-**Yes, I would say the authentication implementation is now fundamentally secure.**
+You have:
 
-I do **not** see an obvious critical authentication bypass in the code I inspected.
-
-Your implementation has gone beyond a typical junior-level authentication system. In particular, these are strong decisions:
-
-```text
-PKCE
-+ nonce
-+ state
-+ verified Google ID token
-+ JWKS signature verification
-+ issuer/audience checks
-+ hashed DB sessions
-+ AES-256-GCM token encryption
-+ atomic session rotation claim
-+ CSRF HMAC
-+ timing-safe CSRF comparison
-+ HttpOnly/Secure/__Host cookies
-+ explicit extension origins
-+ logout-all/session revocation
+```ts
+{ sessionIdHash, rotatedAt: { $exists: false }, revokedAt: { $exists: false } }
 ```
 
-### My rating right now:
+when claiming rotation.
 
-**Authentication security: 8.5/10**
+So two concurrent requests can't both successfully claim the same old session.
 
-After fixing:
+And:
 
-1. expired-session check before rotated-session grace handling
-2. reducing the rotation grace window
-3. starting the server only after DB/index initialization
-4. clearing OAuth temporary cookies on failure
+```text
+Request A
+   ↓
+creates replacement
+   ↓
+claims rotation
+   ↓
+SUCCESS
 
-I would consider the authentication layer **very solid for a production MVP**.
+Request B
+   ↓
+creates replacement
+   ↓
+claimRotation = false
+   ↓
+delete its temporary session
+```
 
-The biggest thing I would review next is **how the Sidekick client/Chrome extension stores and sends the authentication token**, because even a strong server authentication system can be weakened by insecure client-side token storage.
+That's a good implementation.
+
+---
+
+# One subtle issue I'd improve
+
+Your session rotation creates the replacement **before** atomically claiming the old session:
+
+```text
+create new session
+      ↓
+claim old session
+```
+
+You correctly clean up the replacement if claiming fails, so it's not a security hole.
+
+But architecturally I'd prefer the rotation operation to be more tightly controlled, because a crash between:
+
+```text
+insert new session
+```
+
+and:
+
+```text
+claim old session
+```
+
+can leave an orphan session in MongoDB.
+
+Your cleanup/TTL will eventually handle it, so this isn't a major concern.
+
+---
+
+# Google token storage looks good
+
+You are using:
+
+```text
+AES-256-GCM
+```
+
+with:
+
+```text
+random 12-byte IV
++
+authentication tag
++
+encrypted ciphertext
+```
+
+and the encryption key is required to decode to exactly:
+
+```text
+32 bytes
+```
+
+That's appropriate.
+
+You're also preserving an existing refresh token when Google doesn't return a new one:
+
+```ts
+tokens.refreshToken ??
+existing.refreshToken
+```
+
+Good.
+
+---
+
+# Environment security is now much better
+
+You added:
+
+```text
+✅ required env validation
+✅ positive integer validation
+✅ non-negative rotation settings
+✅ SESSION_SECRET length
+✅ entropy check
+✅ 32-byte encryption key check
+✅ production HTTPS redirect protection
+✅ production Google redirect HTTPS requirement
+```
+
+And importantly, your server now starts in the correct order:
+
+```text
+MongoDB
+ ↓
+indexes
+ ↓
+jobs
+ ↓
+HTTP server
+```
+
+Good fix.
+
+---
+
+# Final security status
+
+| Area                       | Status                  |
+| -------------------------- | ----------------------- |
+| Session tokens             | 🟢 Strong               |
+| Session storage            | 🟢 Strong               |
+| Session rotation           | 🟢 Strong               |
+| Session revocation         | 🟢 Strong               |
+| Cookies                    | 🟢 Strong               |
+| CSRF                       | 🟢 Strong               |
+| PKCE                       | 🟢 Strong               |
+| OAuth state                | 🟢 Strong               |
+| OAuth nonce                | 🟠 **Fix required**     |
+| Google ID token validation | 🟢 Strong               |
+| Google identity binding    | 🟠 **Improve**          |
+| Google token encryption    | 🟢 Strong               |
+| Rate limiting              | 🟢 Good                 |
+| HTTPS                      | 🟢 Good                 |
+| Security logging           | 🟢 Good                 |
+| Extension token handling   | 🟠 **Review carefully** |
+
+### What I would fix before calling it production-ready
+
+**1. Make nonce mandatory.**
+
+```ts
+if (!nonce) {
+    throw new ApiError(400, "OAuth authentication failed", "OAUTH_ERROR");
+}
+```
+
+**2. Don't silently replace an existing user's `googleId` based only on email.**
+
+**3. Audit every extension message/API that can access `chrome.storage.session`, because that raw Bearer token is now the most sensitive client-side credential.**
+
+After those, **I would consider the authentication architecture solid for a production MVP**.

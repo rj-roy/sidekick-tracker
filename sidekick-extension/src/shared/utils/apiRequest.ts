@@ -2,19 +2,20 @@ import { API_BASE_URL, CSRF_STORAGE_KEY, SESSION_STORAGE_KEY } from "../constant
 import { ApiEnvelope } from "../types/api";
 import { ApiClientError } from "./errorHandler";
 
-const sessionGet = async (keys: string[]): Promise<Record<string, unknown>> => {
-  if (chrome.storage?.session) {
-    return chrome.storage.session.get(keys);
+const requireSessionStorage = (): void => {
+  if (!chrome.storage?.session) {
+    throw new Error("chrome.storage.session is not available in this browser");
   }
-  return chrome.storage.local.get(keys);
+};
+
+const sessionGet = async (keys: string[]): Promise<Record<string, unknown>> => {
+  requireSessionStorage();
+  return chrome.storage.session.get(keys);
 };
 
 const sessionSet = async (values: Record<string, unknown>): Promise<void> => {
-  if (chrome.storage?.session) {
-    await chrome.storage.session.set(values);
-  } else {
-    await chrome.storage.local.set(values);
-  }
+  requireSessionStorage();
+  await chrome.storage.session.set(values);
 };
 
 export const apiRequest = async <T>(path: string, init?: RequestInit): Promise<T> => {

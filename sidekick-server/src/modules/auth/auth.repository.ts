@@ -21,17 +21,29 @@ export const AuthRepository = {
             return await this.upsertByGoogleId(normalized);
         } catch (err) {
             if (err instanceof MongoServerError && err.code === 11000) {
-                const existing = await (await collection()).findOne({ googleId });
+                const users = await collection();
+
+                const existing = await users.findOne({ googleId });
 
                 if (existing) {
                     return existing;
                 }
 
-                const merged = await this.upsertByEmail(normalized);
+                const byEmail = await users.findOne({ email });
 
-                if (merged) {
-                    return merged;
+                if (!byEmail) {
+                    throw err;
                 }
+
+                if (byEmail.googleId === googleId) {
+                    return byEmail;
+                }
+
+                throw new ApiError(
+                    409,
+                    "An account using this email already exists with a different Google account",
+                    "ACCOUNT_EMAIL_CONFLICT"
+                );
             }
 
             throw err;
@@ -45,29 +57,6 @@ export const AuthRepository = {
             { googleId: userData.googleId },
             {
                 $set: {
-                    name: userData.name,
-                    picture: userData.picture,
-                    emailVerified: userData.emailVerified,
-                    updatedAt: now,
-                },
-                $setOnInsert: {
-                    googleId: userData.googleId,
-                    email: userData.email,
-                    createdAt: now,
-                },
-            },
-            { upsert: true, returnDocument: "after" }
-        );
-    },
-
-    async upsertByEmail(userData: { googleId: string; email: string; name: string; picture?: string; emailVerified?: boolean; }) {
-        const now = new Date();
-
-        return await (await collection()).findOneAndUpdate(
-            { email: userData.email },
-            {
-                $set: {
-                    googleId: userData.googleId,
                     name: userData.name,
                     picture: userData.picture,
                     emailVerified: userData.emailVerified,
