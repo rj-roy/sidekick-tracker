@@ -29,8 +29,10 @@ const syncSessionCookie = async (): Promise<void> => {
 };
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("SideKick background installed");
+  console.log(`SideKick background installed (id: ${chrome.runtime.id})`);
 });
+
+console.log(`SideKick background started (id: ${chrome.runtime.id})`);
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   switch (message?.type) {

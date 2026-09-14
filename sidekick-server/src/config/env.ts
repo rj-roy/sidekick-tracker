@@ -129,6 +129,15 @@ const extensionIds = rawExtensionIds
   : [];
 const appExtensions = extensionIds.map((id) => `chrome-extension://${id}`);
 
+if (appExtensions.length === 0) {
+  if (isProduction) {
+    throw new ApiError(500, "CHROME_EXTENSION_ID must not be empty in production");
+  }
+  console.warn(
+    "[env] CHROME_EXTENSION_ID is empty; requests from the extension will be rejected"
+  );
+}
+
 const trustProxy =
   process.env.TRUST_PROXY === undefined || process.env.TRUST_PROXY === ""
     ? (isProduction ? 1 : 0)
