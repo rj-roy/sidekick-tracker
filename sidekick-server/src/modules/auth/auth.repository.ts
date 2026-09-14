@@ -1,7 +1,9 @@
-import { ensureDB } from "../../database/index.js";
-import { MongoServerError, type ObjectId } from "mongodb";
+import { MongoServerError } from "mongodb";
+import type { ObjectId } from "mongodb";
 import { env } from "../../config/env.js";
 import { ApiError } from "../../utils/ApiError.js";
+import { ensureDB } from "../../database/mongodb.js";
+import { normalizeEmail } from "../../utils/normalize-email.js";
 
 const collection = async () => {
     const db = await ensureDB();
@@ -11,41 +13,66 @@ const collection = async () => {
 export const AuthRepository = {
 
     async upsert(userData: { googleId: string; email: string; name: string; picture?: string; emailVerified?: boolean; }) {
-        const now = new Date();
-        let result;
+        const googleId = userData.googleId;
+        const email = normalizeEmail(userData.email);
+        const normalized = { ...userData, googleId, email };
+
         try {
-            result = await (await collection()).findOneAndUpdate(
-                { email: userData.email },
-                {
-                    $set: {
-                        googleId: userData.googleId,
-                        name: userData.name,
-                        picture: userData.picture,
-                        emailVerified: userData.emailVerified,
-                        updatedAt: now,
-                    },
-                    $setOnInsert: {
-                        email: userData.email,
-                        createdAt: now,
-                    },
-                },
-                { upsert: true, returnDocument: "after" }
-            );
+            return await this.upsertByGoogleId(normalized);
         } catch (err) {
-            if (!(err instanceof MongoServerError) || err.code !== 11000) {
-                throw err;
+            if (err instanceof MongoServerError && err.code === 11000) {
+                const users = await collection();
+
+                const existing = await users.findOne({ googleId });
+
+                if (existing) {
+                    return existing;
+                }
+
+                const byEmail = await users.findOne({ email });
+
+                if (!byEmail) {
+                    throw err;
+                }
+
+                if (byEmail.googleId === googleId) {
+                    return byEmail;
+                }
+
+                throw new ApiError(
+                    409,
+                    "An account using this email already exists with a different Google account",
+                    "ACCOUNT_EMAIL_CONFLICT"
+                );
             }
-            result = await (await collection()).findOne({ email: userData.email });
+
+            throw err;
         }
+    },
 
-        if (!result) {
-            throw new ApiError(500, "Failed to create or update user");
-        };
+    async upsertByGoogleId(userData: { googleId: string; email: string; name: string; picture?: string; emailVerified?: boolean; }) {
+        const now = new Date();
 
-        return result;
+        return await (await collection()).findOneAndUpdate(
+            { googleId: userData.googleId },
+            {
+                $set: {
+                    name: userData.name,
+                    picture: userData.picture,
+                    emailVerified: userData.emailVerified,
+                    updatedAt: now,
+                },
+                $setOnInsert: {
+                    googleId: userData.googleId,
+                    email: userData.email,
+                    createdAt: now,
+                },
+            },
+            { upsert: true, returnDocument: "after" }
+        );
     },
 
     async findById(id: ObjectId) {
-        return (await collection()).findOne({ _id: id });
+        return await (await collection()).findOne({ _id: id });
     },
 };

@@ -28,13 +28,6 @@ export async function ensureDB(): Promise<Db> {
   return connectDB();
 };
 
-export function getClient(): MongoClient {
-  if (!client) {
-    throw new ApiError(500, "Database client not connected.");
-  };
-  return client;
-};
-
 export async function disconnectDB(): Promise<void> {
   if (client) {
     await client.close();

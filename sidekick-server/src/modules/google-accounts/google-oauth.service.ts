@@ -1,84 +1,123 @@
-import type { ObjectId } from "mongodb";
-import { env } from "../../config/env.js";
+import { ObjectId } from "mongodb";
 import { ApiError } from "../../utils/ApiError.js";
+import { env } from "../../config/env.js";
 import { decrypt } from "../../utils/crypto.js";
 import { GoogleAccountRepository } from "./google-account.repository.js";
-import type { StoredGoogleTokens } from "./google-account.types.js";
-import type { GoogleTokenResponse } from "../auth/auth.types.js";
+import { GoogleTokenResponse, StoredGoogleTokens } from "../auth/auth.types.js";
+import { logSecurityEvent } from "../../utils/security-log.js";
 
-const REFRESH_BUFFER_MS = 5 * 60 * 1000;
+export const GoogleOAuthService = {
+    async getValidAccessToken(userId: ObjectId): Promise<string> {
+        const userAccount = await GoogleAccountRepository.findByUserId(userId);
 
-const parseStoredTokens = (encryptedTokens: string): StoredGoogleTokens => {
-  try {
-    const parsed = JSON.parse(decrypt(encryptedTokens)) as StoredGoogleTokens;
-    if (typeof parsed.accessToken !== "string") {
-      throw new Error("Missing access token");
-    }
-    return parsed;
-  } catch {
-    throw new ApiError(500, "Failed to decrypt stored Google tokens");
-  }
+        if (!userAccount) {
+            throw new ApiError(404, "Google account not connected");
+        };
+
+        const decryptedTokens = JSON.parse(decrypt(userAccount.encryptedTokens)) as StoredGoogleTokens;
+
+        if (typeof decryptedTokens.accessToken !== "string") {
+            throw new ApiError(401, "Missing access token");
+        };
+
+        const thresholdMs = env.google.tokenRefreshThresholdSeconds * 1000;
+
+        if (userAccount.expiresAt && userAccount.expiresAt.getTime() > Date.now() + thresholdMs) {
+            return decryptedTokens.accessToken;
+        };
+
+        if (typeof decryptedTokens.refreshToken !== "string") {
+            throw new ApiError(401, "Google authorization required");
+        };
+
+        const tokens = await refreshAccessToken(decryptedTokens.refreshToken);
+
+        await GoogleAccountRepository.updateTokens(
+            userId,
+            {
+                accessToken: tokens.access_token,
+                refreshToken: tokens.refresh_token,
+                tokenType: tokens.token_type,
+                expiresIn: tokens.expires_in,
+            },
+        );
+        return tokens.access_token;
+    },
+
+    async revokeAccount(userId: ObjectId): Promise<void> {
+        const userAccount = await GoogleAccountRepository.findByUserId(userId);
+
+        if (userAccount?.encryptedTokens) {
+            let stored: StoredGoogleTokens | undefined;
+            try {
+                stored = JSON.parse(decrypt(userAccount.encryptedTokens)) as StoredGoogleTokens;
+            } catch {
+                stored = undefined;
+            }
+
+            const token = stored?.refreshToken ?? stored?.accessToken;
+
+            if (token) {
+                try {
+                    await fetch(env.google.revokeUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: new URLSearchParams({ token }),
+                    });
+                } catch {
+                    // Revocation is best-effort; the local record is removed regardless.
+                }
+            }
+        }
+
+        await GoogleAccountRepository.deleteByUserId(userId);
+    },
 };
 
 const refreshAccessToken = async (refreshToken: string): Promise<GoogleTokenResponse> => {
-  const response = await fetch(env.google.tokenUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      refresh_token: refreshToken,
-      client_id: env.google.clientId,
-      client_secret: env.google.clientSecret,
-      grant_type: "refresh_token",
-    }),
-  });
+    let response: Response;
 
-  if (response.status === 400 || response.status === 401 || response.status === 403) {
-    throw new ApiError(401, "Google refresh token is invalid or revoked");
-  }
+    try {
+        response = await fetch(env.google.tokenUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+                client_id: env.google.clientId,
+                client_secret: env.google.clientSecret,
+                refresh_token: refreshToken,
+                grant_type: "refresh_token",
+            }),
+        });
+    } catch (err) {
+        logSecurityEvent("TOKEN_REFRESH_FAILURE", {
+            message: err instanceof Error ? err.message : "network-error",
+        });
+        throw new ApiError(502, "Google upstream error");
+    };
 
-  if (!response.ok) {
-    throw new ApiError(502, "Google upstream error");
-  }
+    if (response.status === 400 || response.status === 401) {
+        logSecurityEvent("TOKEN_REFRESH_FAILURE", { status: response.status });
+        throw new ApiError(401, "Google authorization required");
+    };
 
-  const data: unknown = await response.json();
+    if (!response.ok) {
+        logSecurityEvent("TOKEN_REFRESH_FAILURE", { status: response.status });
+        throw new ApiError(502, "Google upstream error");
+    };
 
-  if (!data || typeof data !== "object" || typeof (data as GoogleTokenResponse).access_token !== "string") {
-    throw new ApiError(502, "Malformed response from Google");
-  }
+    const data: unknown = await response.json();
 
-  return data as GoogleTokenResponse;
-};
+    if (
+        !data ||
+        typeof data !== "object" ||
+        typeof (data as GoogleTokenResponse).access_token !==
+        "string"
+    ) {
+        logSecurityEvent("TOKEN_REFRESH_FAILURE", { reason: "malformed-response" });
+        throw new ApiError(502, "Malformed response from Google");
+    };
 
-export const GoogleOAuthService = {
-  async getAccessToken(userId: ObjectId): Promise<string> {
-    const account = await GoogleAccountRepository.findByUserId(userId);
-
-    if (!account) {
-      throw new ApiError(401, "No linked Google account for this user");
-    }
-
-    const tokens = parseStoredTokens(account.encryptedTokens);
-    const expiresAtMs = account.expiresAt ? new Date(account.expiresAt).getTime() : 0;
-    const needsRefresh = !account.expiresAt || expiresAtMs - Date.now() <= REFRESH_BUFFER_MS;
-
-    if (!needsRefresh) {
-      return tokens.accessToken;
-    }
-
-    if (!tokens.refreshToken) {
-      throw new ApiError(401, "Google refresh token missing; re-authentication required");
-    }
-
-    const refreshed = await refreshAccessToken(tokens.refreshToken);
-
-    await GoogleAccountRepository.upsertTokens(userId, account.email, {
-      accessToken: refreshed.access_token,
-      refreshToken: refreshed.refresh_token ?? tokens.refreshToken,
-      tokenType: refreshed.token_type,
-      expiresIn: refreshed.expires_in,
-      scope: refreshed.scope,
-    });
-
-    return refreshed.access_token;
-  },
+    return data as GoogleTokenResponse;
 };

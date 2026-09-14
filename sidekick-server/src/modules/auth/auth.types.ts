@@ -5,7 +5,7 @@ export interface GoogleTokenResponse {
     expires_in: number;
     scope?: string;
     refresh_token?: string;
-}
+};
 
 export interface GoogleUserInfo {
     id: string;
@@ -13,4 +13,10 @@ export interface GoogleUserInfo {
     name: string;
     picture?: string;
     verified_email?: boolean;
+};
+
+export interface StoredGoogleTokens {
+  accessToken: string;
+  refreshToken?: string;
+  tokenType?: string;
 }

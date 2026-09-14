@@ -2,21 +2,59 @@ import { Router } from "express";
 import { AuthController } from "./auth.controller.js";
 import { asyncHandler } from "../../utils/async-handler.js";
 import { createRateLimit } from "../../middleware/rate-limit.middleware.js";
-import { rateLimitStore } from "../../config/rate-limit.js";
+import { requireAuth } from "../../middleware/auth.middleware.js";
+import { requireCsrf } from "../../middleware/csrf.middleware.js";
 
 const router = Router();
 
 router.get(
     "/google/login",
-    createRateLimit({ store: rateLimitStore, windowMs: 60_000, max: 30 }),
+    createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
     AuthController.googleAuthRedirect
 );
 router.get(
     "/google/callback",
-    createRateLimit({ store: rateLimitStore, windowMs: 10 * 60_000, max: 10 }),
+    createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
     asyncHandler(AuthController.handleGoogleCallback)
 );
-// router.get("/me", AuthController.getCurrentUser);
-// router.post("/logout", AuthController.logout);
+router.get(
+    "/me",
+    requireAuth,
+    createRateLimit({ windowMs: 60_000, limit: 60 }),
+    asyncHandler(AuthController.getMe)
+);
+router.get(
+    "/csrf",
+    requireAuth,
+    createRateLimit({ windowMs: 60_000, limit: 30 }),
+    asyncHandler(AuthController.getCsrfToken)
+);
+router.get(
+    "/sessions",
+    requireAuth,
+    createRateLimit({ windowMs: 60_000, limit: 30 }),
+    asyncHandler(AuthController.listSessions)
+);
+router.delete(
+    "/sessions/:sessionId",
+    requireAuth,
+    requireCsrf,
+    createRateLimit({ windowMs: 60_000, limit: 15 }),
+    asyncHandler(AuthController.revokeSession)
+);
+router.post(
+    "/logout-all",
+    requireAuth,
+    requireCsrf,
+    createRateLimit({ windowMs: 60_000, limit: 10 }),
+    asyncHandler(AuthController.logoutAll)
+);
+router.post(
+    "/logout",
+    requireAuth,
+    requireCsrf,
+    createRateLimit({ windowMs: 60_000, limit: 10 }),
+    asyncHandler(AuthController.logout)
+);
 
 export default router;
