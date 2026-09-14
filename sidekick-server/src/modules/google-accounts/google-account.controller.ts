@@ -3,6 +3,7 @@ import { ApiResponse } from "../../utils/ApiRsponse.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { GoogleAccountRepository } from "./google-account.repository.js";
 import { GoogleOAuthService } from "./google-oauth.service.js";
+import { logSecurityEvent } from "../../utils/security-log.js";
 
 export const GoogleAccountController = {
     async getAccount(req: Request, res: Response) {
@@ -47,6 +48,8 @@ export const GoogleAccountController = {
         }
 
         await GoogleOAuthService.revokeAccount(req.userId);
+
+        logSecurityEvent("GOOGLE_ACCOUNT_DISCONNECTED", { userId: req.userId.toHexString() });
 
         return ApiResponse.success(res, "Google account disconnected");
     },

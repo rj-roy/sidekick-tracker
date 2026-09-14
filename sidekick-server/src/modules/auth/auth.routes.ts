@@ -9,7 +9,7 @@ const router = Router();
 
 router.get(
     "/google/login",
-    createRateLimit({ windowMs: 60_000, limit: 30 }),
+    createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
     AuthController.googleAuthRedirect
 );
 router.get(
@@ -17,8 +17,44 @@ router.get(
     createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
     asyncHandler(AuthController.handleGoogleCallback)
 );
-router.get("/me", requireAuth, asyncHandler(AuthController.getMe));
-router.get("/csrf", requireAuth, asyncHandler(AuthController.getCsrfToken));
-router.post("/logout", requireAuth, requireCsrf, asyncHandler(AuthController.logout));
+router.get(
+    "/me",
+    requireAuth,
+    createRateLimit({ windowMs: 60_000, limit: 60 }),
+    asyncHandler(AuthController.getMe)
+);
+router.get(
+    "/csrf",
+    requireAuth,
+    createRateLimit({ windowMs: 60_000, limit: 30 }),
+    asyncHandler(AuthController.getCsrfToken)
+);
+router.get(
+    "/sessions",
+    requireAuth,
+    createRateLimit({ windowMs: 60_000, limit: 30 }),
+    asyncHandler(AuthController.listSessions)
+);
+router.delete(
+    "/sessions/:sessionId",
+    requireAuth,
+    requireCsrf,
+    createRateLimit({ windowMs: 60_000, limit: 15 }),
+    asyncHandler(AuthController.revokeSession)
+);
+router.post(
+    "/logout-all",
+    requireAuth,
+    requireCsrf,
+    createRateLimit({ windowMs: 60_000, limit: 10 }),
+    asyncHandler(AuthController.logoutAll)
+);
+router.post(
+    "/logout",
+    requireAuth,
+    requireCsrf,
+    createRateLimit({ windowMs: 60_000, limit: 10 }),
+    asyncHandler(AuthController.logout)
+);
 
 export default router;

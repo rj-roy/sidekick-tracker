@@ -1,4 +1,4 @@
-import { MongoServerError, WithId } from "mongodb";
+import { MongoServerError, ObjectId, WithId } from "mongodb";
 import { env } from "../../config/env.js";
 import { ensureDB } from "../../database/mongodb.js"
 import { SessionDoc } from "./session.types.js";
@@ -40,10 +40,45 @@ export const SessionRepository = {
         );
     },
 
-    async markRotated(sessionIdHash: string, rotatedToHash: string): Promise<void> {
-        await (await collection()).updateOne(
-            { sessionIdHash },
-            { $set: { rotatedToHash, rotatedAt: new Date() } }
+    async claimRotation(sessionIdHash: string, rotatedAt: Date, rotatedToHash: string): Promise<boolean> {
+        const result = await (await collection()).updateOne(
+            { sessionIdHash, rotatedAt: { $exists: false }, revokedAt: { $exists: false } },
+            { $set: { rotatedAt, rotatedToHash } }
         );
+
+        return result.modifiedCount === 1;
+    },
+
+    async deleteBySessionIdHash(sessionIdHash: string): Promise<void> {
+        await (await collection()).deleteOne({ sessionIdHash });
+    },
+
+    async findByUserId(userId: ObjectId): Promise<WithId<SessionDoc>[]> {
+        return await (await collection())
+            .find({ userId })
+            .sort({ lastSeenAt: -1 })
+            .toArray();
+    },
+
+    async findById(sessionId: ObjectId): Promise<WithId<SessionDoc> | null> {
+        return await (await collection()).findOne({ _id: sessionId });
+    },
+
+    async revokeById(userId: ObjectId, sessionId: ObjectId, revokeReason: string): Promise<boolean> {
+        const result = await (await collection()).updateOne(
+            { _id: sessionId, userId, revokedAt: { $exists: false } },
+            { $set: { revokedAt: new Date(), revokeReason } }
+        );
+
+        return result.modifiedCount === 1;
+    },
+
+    async revokeAllForUser(userId: ObjectId, revokeReason: string): Promise<number> {
+        const result = await (await collection()).updateMany(
+            { userId, revokedAt: { $exists: false } },
+            { $set: { revokedAt: new Date(), revokeReason } }
+        );
+
+        return result.modifiedCount;
     },
 };

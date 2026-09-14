@@ -12,6 +12,7 @@ export async function initializeIndexes(): Promise<void> {
 
   await Promise.all([
     users.createIndex({ email: 1 }, { unique: true }),
+    users.createIndex({ googleId: 1 }, { unique: true, partialFilterExpression: { googleId: { $type: "string" } } }),
 
     trackedEmails.createIndex({ userId: 1 }),
     trackedEmails.createIndex({ messageId: 1 }),
@@ -24,7 +25,7 @@ export async function initializeIndexes(): Promise<void> {
     googleAccounts.createIndex({ email: 1 }, { unique: true }),
 
     sessions.createIndex({ sessionIdHash: 1 }, { unique: true }),
-    sessions.createIndex({ userId: 1 }),
+    sessions.createIndex({ userId: 1, lastSeenAt: -1 }),
     sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
   ]);
 

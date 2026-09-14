@@ -5,6 +5,7 @@ import type { GoogleAccountTokens } from "./google-account.types.js";
 import { ensureDB } from "../../database/mongodb.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { StoredGoogleTokens } from "../auth/auth.types.js";
+import { normalizeEmail } from "../../utils/normalize-email.js";
 
 const collection = async () => {
   const db = await ensureDB();
@@ -42,7 +43,7 @@ export const GoogleAccountRepository = {
     );
 
     const set: Document = {
-      email,
+      email: normalizeEmail(email),
       encryptedTokens,
       scopes,
       updatedAt: now,

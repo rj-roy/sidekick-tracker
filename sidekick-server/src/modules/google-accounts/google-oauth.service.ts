@@ -4,6 +4,7 @@ import { env } from "../../config/env.js";
 import { decrypt } from "../../utils/crypto.js";
 import { GoogleAccountRepository } from "./google-account.repository.js";
 import { GoogleTokenResponse, StoredGoogleTokens } from "../auth/auth.types.js";
+import { logSecurityEvent } from "../../utils/security-log.js";
 
 export const GoogleOAuthService = {
     async getValidAccessToken(userId: ObjectId): Promise<string> {
@@ -74,24 +75,35 @@ export const GoogleOAuthService = {
 };
 
 const refreshAccessToken = async (refreshToken: string): Promise<GoogleTokenResponse> => {
-    const response = await fetch(env.google.tokenUrl, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-            client_id: env.google.clientId,
-            client_secret: env.google.clientSecret,
-            refresh_token: refreshToken,
-            grant_type: "refresh_token",
-        }),
-    });
+    let response: Response;
+
+    try {
+        response = await fetch(env.google.tokenUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+                client_id: env.google.clientId,
+                client_secret: env.google.clientSecret,
+                refresh_token: refreshToken,
+                grant_type: "refresh_token",
+            }),
+        });
+    } catch (err) {
+        logSecurityEvent("TOKEN_REFRESH_FAILURE", {
+            message: err instanceof Error ? err.message : "network-error",
+        });
+        throw new ApiError(502, "Google upstream error");
+    };
 
     if (response.status === 400 || response.status === 401) {
+        logSecurityEvent("TOKEN_REFRESH_FAILURE", { status: response.status });
         throw new ApiError(401, "Google authorization required");
     };
 
     if (!response.ok) {
+        logSecurityEvent("TOKEN_REFRESH_FAILURE", { status: response.status });
         throw new ApiError(502, "Google upstream error");
     };
 
@@ -103,6 +115,7 @@ const refreshAccessToken = async (refreshToken: string): Promise<GoogleTokenResp
         typeof (data as GoogleTokenResponse).access_token !==
         "string"
     ) {
+        logSecurityEvent("TOKEN_REFRESH_FAILURE", { reason: "malformed-response" });
         throw new ApiError(502, "Malformed response from Google");
     };
 

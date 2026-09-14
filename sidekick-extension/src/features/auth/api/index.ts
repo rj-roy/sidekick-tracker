@@ -4,11 +4,12 @@ import {
   OPEN_SIGN_IN_MESSAGE,
   SESSION_STORAGE_KEY,
 } from "../../../shared/constants/api";
+import { sessionSet, sessionRemove } from "../../../shared/utils/storage";
 import type { User } from "../types";
 
 const storeCsrfToken = async (csrfToken?: string) => {
   if (csrfToken) {
-    await chrome.storage.local.set({ [CSRF_STORAGE_KEY]: csrfToken });
+    await sessionSet({ [CSRF_STORAGE_KEY]: csrfToken });
   }
 };
 
@@ -27,7 +28,7 @@ export const authApi = {
     try {
       await apiClient.post<void>("/auth/logout");
     } finally {
-      await chrome.storage.local.remove([SESSION_STORAGE_KEY, CSRF_STORAGE_KEY]);
+      await sessionRemove([SESSION_STORAGE_KEY, CSRF_STORAGE_KEY]);
     }
   },
 };

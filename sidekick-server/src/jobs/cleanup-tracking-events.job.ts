@@ -1,11 +1,9 @@
 import { ensureDB } from "../database/mongodb.js";
 import { env } from "../config/env.js";
 
-const retentionDays = Number(process.env.TRACKING_RETENTION_DAYS || 30);
-
 export const cleanupTrackingEvents = async (): Promise<void> => {
   const db = await ensureDB();
-  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+  const cutoff = new Date(Date.now() - env.jobs.trackingRetentionDays * 24 * 60 * 60 * 1000);
 
   const result = await db
     .collection(env.mongodb.collections.emailOpens)

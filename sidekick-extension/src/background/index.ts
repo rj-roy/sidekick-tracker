@@ -2,23 +2,29 @@ import {
   API_BASE_URL,
   AUTH_CALLBACK_PATH,
   OPEN_SIGN_IN_MESSAGE,
-  SESSION_COOKIE_NAME,
+  SESSION_COOKIE_NAMES,
   SESSION_STORAGE_KEY,
   CSRF_STORAGE_KEY,
 } from "../shared/constants/api";
+import { sessionRemove, sessionSet } from "../shared/utils/storage";
 
 const SESSION_COOKIE_DOMAIN = new URL(API_BASE_URL).hostname;
 
-const syncSessionCookie = async (): Promise<void> => {
-  const cookie = await chrome.cookies.get({
-    url: API_BASE_URL,
-    name: SESSION_COOKIE_NAME,
-  });
+const findSessionCookie = async (): Promise<string | undefined> => {
+  for (const name of SESSION_COOKIE_NAMES) {
+    const cookie = await chrome.cookies.get({ url: API_BASE_URL, name });
+    if (cookie) return cookie.value;
+  }
+  return undefined;
+};
 
-  if (cookie?.value) {
-    await chrome.storage.local.set({ [SESSION_STORAGE_KEY]: cookie.value });
+const syncSessionCookie = async (): Promise<void> => {
+  const value = await findSessionCookie();
+
+  if (value) {
+    await sessionSet({ [SESSION_STORAGE_KEY]: value });
   } else {
-    await chrome.storage.local.remove([SESSION_STORAGE_KEY, CSRF_STORAGE_KEY]);
+    await sessionRemove([SESSION_STORAGE_KEY, CSRF_STORAGE_KEY]);
   }
 };
 
@@ -39,7 +45,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 chrome.cookies.onChanged.addListener((changeInfo) => {
   const { cookie, removed } = changeInfo;
-  if (cookie.name !== SESSION_COOKIE_NAME) return;
+  if (!SESSION_COOKIE_NAMES.includes(cookie.name)) return;
   if (cookie.domain !== SESSION_COOKIE_DOMAIN) return;
 
   syncSessionCookie();
@@ -50,13 +56,10 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (!tab.url || !tab.url.startsWith(`${API_BASE_URL}${AUTH_CALLBACK_PATH}`)) return;
 
   const captureSession = async (retries = 8) => {
-    const cookie = await chrome.cookies.get({
-      url: API_BASE_URL,
-      name: SESSION_COOKIE_NAME,
-    });
+    const value = await findSessionCookie();
 
-    if (cookie?.value) {
-      await chrome.storage.local.set({ [SESSION_STORAGE_KEY]: cookie.value });
+    if (value) {
+      await sessionSet({ [SESSION_STORAGE_KEY]: value });
       chrome.tabs.remove(tabId);
       return;
     }

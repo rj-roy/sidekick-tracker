@@ -1,9 +1,8 @@
 import { processEmails } from "./email-processing.job.js";
 import { cleanupTrackingEvents } from "./cleanup-tracking-events.job.js";
+import { cleanupSessions } from "./session-cleanup.job.js";
 import { syncSubscriptions } from "./subscription-sync.job.js";
-
-const EMAIL_POLL_INTERVAL_MS = Number(process.env.EMAIL_POLL_INTERVAL_MS || 5 * 60 * 1000);
-const CLEANUP_INTERVAL_MS = Number(process.env.TRACKING_CLEANUP_INTERVAL_MS || 24 * 60 * 60 * 1000);
+import { env } from "../config/env.js";
 
 const schedule = (name: string, task: () => Promise<void>, intervalMs: number): void => {
   let running = false;
@@ -27,7 +26,8 @@ const schedule = (name: string, task: () => Promise<void>, intervalMs: number): 
 };
 
 export const startJobs = (): void => {
-  schedule("email-processing", () => processEmails(), EMAIL_POLL_INTERVAL_MS);
-  schedule("cleanup-tracking-events", cleanupTrackingEvents, CLEANUP_INTERVAL_MS);
-  schedule("subscription-sync", syncSubscriptions, CLEANUP_INTERVAL_MS);
+  schedule("email-processing", () => processEmails(), env.jobs.emailPollIntervalMs);
+  schedule("cleanup-tracking-events", cleanupTrackingEvents, env.jobs.trackingCleanupIntervalMs);
+  schedule("cleanup-sessions", cleanupSessions, env.jobs.sessionCleanupIntervalMs);
+  schedule("subscription-sync", syncSubscriptions, env.jobs.trackingCleanupIntervalMs);
 };

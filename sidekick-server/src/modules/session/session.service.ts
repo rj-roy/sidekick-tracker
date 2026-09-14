@@ -5,6 +5,15 @@ import { env } from "../../config/env.js";
 import { SessionDoc } from "./session.types.js";
 import { SessionRepository } from "./session.repository.js";
 import { ApiError } from "../../utils/ApiError.js";
+import { logSecurityEvent } from "../../utils/security-log.js";
+
+const TOKEN_REGEX = /^[A-Za-z0-9_-]{43,}$/;
+
+interface ValidatedSession {
+    session: WithId<SessionDoc>;
+    rotatedToken?: string;
+    rotatedSessionId?: string;
+}
 
 export const SessionService = {
     async createSession(userId: ObjectId, userAgent: string, ipAddress: string) {
@@ -29,32 +38,51 @@ export const SessionService = {
                     throw new ApiError(501, "Internal Server Error!");
                 };
 
+                logSecurityEvent("SESSION_CREATED", {
+                    userId: userId.toHexString(),
+                    sessionId: session._id.toHexString(),
+                });
+
                 return { token, sessionId: session._id.toHexString() };
 
             } catch (err) {
                 if (err instanceof ApiError && err.code === "SESSION_COLLISION" && attempt === 0) {
                     continue;
                 };
-                
+
                 throw err;
             };
         };
         throw new ApiError(500, "Failed to create session", "SESSION_CREATE_FAILED");
     },
 
+    isWellFormedToken(token: string): boolean {
+        return TOKEN_REGEX.test(token) && token.length <= 256;
+    },
+
     async validateSession(
         token: string,
         rotate?: { userAgent: string; ipAddress: string }
-    ): Promise<{ session: WithId<SessionDoc>; rotatedToken?: string }> {
-        const sessionIdHash = hash(token);
-        const session = await SessionRepository.findBySessionIdHash(sessionIdHash);
+    ): Promise<ValidatedSession> {
+        if (!this.isWellFormedToken(token)) {
+            throw new ApiError(401, "Invalid session token", "SESSION_INVALID");
+        }
+
+        const session = await SessionRepository.findBySessionIdHash(hash(token));
+        const userIdHex = session?.userId.toHexString();
 
         if (!session) {
-            throw new ApiError(401, "Session not found", "SESSION_INVALID");
+            logSecurityEvent("SESSION_INVALID", { reason: "not-found" });
+            throw new ApiError(401, "Authentication required", "SESSION_INVALID");
         }
 
         if (session.revokedAt) {
-            throw new ApiError(401, "Session revoked", "SESSION_REVOKED");
+            logSecurityEvent("SESSION_REVOKED", {
+                userId: userIdHex,
+                sessionId: session._id.toHexString(),
+                reason: session.revokeReason ?? "unknown",
+            });
+            throw new ApiError(401, "Authentication required", "SESSION_REVOKED");
         }
 
         if (session.rotatedToHash) {
@@ -62,14 +90,22 @@ export const SessionService = {
             const rotatedAt = session.rotatedAt?.getTime() ?? 0;
 
             if (Date.now() - rotatedAt > graceMs) {
-                throw new ApiError(401, "Session rotated", "SESSION_ROTATED");
+                throw new ApiError(401, "Authentication required", "SESSION_ROTATED");
             }
 
             return { session };
         }
 
         if (session.expiresAt.getTime() <= Date.now()) {
-            throw new ApiError(401, "Session expired", "SESSION_EXPIRED");
+            logSecurityEvent("SESSION_EXPIRED", {
+                userId: userIdHex,
+                sessionId: session._id.toHexString(),
+            });
+            throw new ApiError(401, "Authentication required", "SESSION_EXPIRED");
+        }
+
+        if (rotate) {
+            this.detectAnomaly(session, rotate);
         }
 
         const now = new Date();
@@ -80,16 +116,69 @@ export const SessionService = {
             now.getTime() - session.createdAt.getTime() >= rotationIntervalMs;
 
         if (!shouldRotate) {
-            await SessionRepository.touchSession(sessionIdHash, now);
+            await SessionRepository.touchSession(session.sessionIdHash, now);
             return { session };
         }
 
-        const rotatedToken = await rotateSessionToken(session, now, rotate.userAgent, rotate.ipAddress);
-        return { session, rotatedToken };
+        const rotated = await rotateSessionToken(session, now, rotate.userAgent, rotate.ipAddress);
+
+        if (!rotated) {
+            return { session };
+        }
+
+        return { session, rotatedToken: rotated.token, rotatedSessionId: rotated.sessionId };
     },
 
     async revokeSession(token: string, revokeReason: string): Promise<void> {
         await SessionRepository.revokeSession(hash(token), revokeReason);
+    },
+
+    async revokeAllForUser(userId: ObjectId, revokeReason: string): Promise<number> {
+        const count = await SessionRepository.revokeAllForUser(userId, revokeReason);
+
+        if (count > 0) {
+            logSecurityEvent("SESSION_REVOKED_ALL", { userId: userId.toHexString(), count });
+        }
+
+        return count;
+    },
+
+    async listSessions(userId: ObjectId): Promise<WithId<SessionDoc>[]> {
+        return SessionRepository.findByUserId(userId);
+    },
+
+    async revokeSessionById(
+        userId: ObjectId,
+        sessionId: ObjectId,
+        revokeReason: string
+    ): Promise<boolean> {
+        const revoked = await SessionRepository.revokeById(userId, sessionId, revokeReason);
+
+        if (revoked) {
+            logSecurityEvent("SESSION_REVOKED", {
+                userId: userId.toHexString(),
+                sessionId: sessionId.toHexString(),
+                reason: revokeReason,
+            });
+        }
+
+        return revoked;
+    },
+
+    detectAnomaly(session: WithId<SessionDoc>, rotate: { userAgent: string; ipAddress: string }) {
+        if (session.ipAddress && session.ipAddress !== rotate.ipAddress) {
+            logSecurityEvent("SESSION_IP_CHANGED", {
+                userId: session.userId.toHexString(),
+                sessionId: session._id.toHexString(),
+            });
+        }
+
+        if (session.userAgent && session.userAgent !== rotate.userAgent) {
+            logSecurityEvent("SESSION_UA_CHANGED", {
+                userId: session.userId.toHexString(),
+                sessionId: session._id.toHexString(),
+            });
+        }
     },
 };
 
@@ -102,7 +191,7 @@ const rotateSessionToken = async (
     rotatedAt: Date,
     userAgent: string,
     ipAddress: string
-): Promise<string> => {
+): Promise<{ token: string; sessionId: string } | null> => {
     const expiresAt = new Date(rotatedAt.getTime() + env.session.expiresInSeconds * 1000);
 
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -119,9 +208,27 @@ const rotateSessionToken = async (
         };
 
         try {
-            await SessionRepository.upsertSession(doc);
-            await SessionRepository.markRotated(session.sessionIdHash, newHash);
-            return token;
+            const newSession = await SessionRepository.upsertSession(doc);
+
+            const claimed = await SessionRepository.claimRotation(
+                session.sessionIdHash,
+                rotatedAt,
+                newHash
+            );
+
+            if (!claimed) {
+                await SessionRepository.deleteBySessionIdHash(newHash).catch(() => undefined);
+                return null;
+            }
+
+            logSecurityEvent("SESSION_ROTATED", {
+                userId: session.userId.toHexString(),
+                fromSessionId: session._id.toHexString(),
+                sessionId: newSession._id.toHexString(),
+                graceSeconds: env.session.rotationGraceSeconds,
+            });
+
+            return { token, sessionId: newSession._id.toHexString() };
         } catch (err) {
             if (err instanceof ApiError && err.code === "SESSION_COLLISION" && attempt === 0) {
                 continue;
