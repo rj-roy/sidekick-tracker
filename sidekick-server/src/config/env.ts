@@ -94,7 +94,7 @@ const sessionExpiresInSeconds = positiveInt("SESSION_EXPIRES_IN_SECONDS", 604800
 const rotationIntervalSeconds = nonNegativeInt("SESSION_ROTATION_INTERVAL_SECONDS", 86400);
 const rotationGraceSeconds = nonNegativeInt("SESSION_ROTATION_GRACE_SECONDS", 15);
 const revokeOnHighRiskAnomaly =
-  (process.env.REVOKE_ON_HIGH_RISK_ANOMALY ?? "false").toLowerCase() === "true";
+  (process.env.REVOKE_ON_HIGH_RISK_ANOMALY ?? "true").toLowerCase() === "true";
 
 const googleRedirectUrl = getRequiredEnv("GOOGLE_REDIRECT_URL");
 if (isProduction) {
@@ -133,6 +133,8 @@ const trustProxy =
   process.env.TRUST_PROXY === undefined || process.env.TRUST_PROXY === ""
     ? (isProduction ? 1 : 0)
     : positiveInt("TRUST_PROXY", 1);
+
+const rateLimitRedisUrl = process.env.REDIS_URL?.trim() || undefined;
 
 export const env = {
   nodeEnv,
@@ -193,4 +195,8 @@ export const env = {
 
   appOrigins,
   appExtensions,
+
+  rateLimit: {
+    redisUrl: rateLimitRedisUrl,
+  },
 } as const;

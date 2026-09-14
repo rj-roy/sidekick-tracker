@@ -13,6 +13,7 @@ import { csrfTokenFor } from "../../middleware/csrf.middleware.js";
 import { cookieOptions, clearCookieOptions } from "../../utils/cookies.js";
 import { generatePkcePair, generateNonce } from "../../utils/pkce.js";
 import { logSecurityEvent } from "../../utils/security-log.js";
+import { AuthFailureGuard } from "../../utils/auth-failure-guard.js";
 
 export const AuthController = {
     googleAuthRedirect(req: Request, res: Response) {
@@ -47,6 +48,16 @@ export const AuthController = {
             res.clearCookie(env.cookies.oauthState, clearCookieOptions());
             res.clearCookie(env.cookies.oauthVerifier, clearCookieOptions());
         };
+
+        const clientIp = req.ip || "unknown";
+
+        if (AuthFailureGuard.isLockedOut(clientIp)) {
+            throw new ApiError(
+                429,
+                "Too many failed sign-in attempts",
+                "AUTH_LOCKED_OUT"
+            );
+        }
 
         try {
             const { code, state } = validateLoginCallback(req.query);
@@ -141,6 +152,11 @@ export const AuthController = {
             return ApiResponse.success(res, "Login Succeed", data);
         } catch (err) {
             clearOAuthCookies();
+
+            if (err instanceof ApiError && err.code) {
+                AuthFailureGuard.recordFailure(clientIp, err.code);
+            }
+
             throw err;
         }
     },

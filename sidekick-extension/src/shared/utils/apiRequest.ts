@@ -33,6 +33,11 @@ export const apiRequest = async <T>(path: string, init?: RequestInit): Promise<T
     ...init,
   });
 
+  const rotatedToken = res.headers.get("x-session-token");
+  if (rotatedToken) {
+    await sessionSet({ [SESSION_STORAGE_KEY]: rotatedToken });
+  }
+
   const rotatedCsrf = res.headers.get("x-csrf-token");
   if (rotatedCsrf) {
     await sessionSet({ [CSRF_STORAGE_KEY]: rotatedCsrf });

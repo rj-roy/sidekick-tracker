@@ -5,6 +5,7 @@ import { SessionService } from "../modules/session/session.service.js";
 import { env } from "../config/env.js";
 import { cookieOptions } from "../utils/cookies.js";
 import { csrfTokenFor } from "./csrf.middleware.js";
+import { logSecurityEvent } from "../utils/security-log.js";
 
 declare global {
     namespace Express {
@@ -16,25 +17,44 @@ declare global {
     }
 }
 
-const extractToken = (req: Request): string | undefined => {
+const extractToken = (
+    req: Request
+): { token: string | undefined; viaBearer: boolean } => {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader) {
-        return req.cookies?.[env.cookies.raw];
+    if (authHeader) {
+        if (!authHeader.startsWith("Bearer ")) {
+            throw new ApiError(401, "Authentication required", "SESSION_INVALID");
+        }
+
+        return { token: authHeader.slice(7), viaBearer: true };
     }
 
-    if (!authHeader.startsWith("Bearer ")) {
-        throw new ApiError(401, "Authentication required", "SESSION_INVALID");
-    }
+    return { token: req.cookies?.[env.cookies.raw], viaBearer: false };
+};
 
-    return authHeader.slice(7);
+const ensureBearerOrigin = (req: Request): void => {
+    const origin = req.get("origin");
+
+    if (!origin || !env.appExtensions.includes(origin)) {
+        logSecurityEvent("SESSION_BEARER_UNTRUSTED_ORIGIN", { path: req.path });
+        throw new ApiError(
+            403,
+            "Bearer tokens are only accepted from the extension",
+            "SESSION_DENIED_ORIGIN"
+        );
+    }
 };
 
 export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
-    const token = extractToken(req);
+    const { token, viaBearer } = extractToken(req);
 
     if (!token) {
         throw new ApiError(401, "Authentication required");
+    }
+
+    if (viaBearer) {
+        ensureBearerOrigin(req);
     }
 
     const userAgent = req.get("user-agent") || "unknown";
@@ -49,7 +69,12 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
         req.sessionId = result.rotatedSessionId;
         req.sessionToken = result.rotatedToken;
 
-        res.cookie(env.cookies.raw, result.rotatedToken, cookieOptions(env.session.expiresInSeconds * 1000));
+        if (viaBearer) {
+            res.setHeader("x-session-token", result.rotatedToken);
+        } else {
+            res.cookie(env.cookies.raw, result.rotatedToken, cookieOptions(env.session.expiresInSeconds * 1000));
+        }
+
         res.setHeader("x-csrf-token", csrfTokenFor(result.rotatedSessionId));
     }
 
