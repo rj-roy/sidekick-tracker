@@ -7,27 +7,26 @@ import { requireCsrf } from "../../middleware/csrf.middleware.js";
 
 const router = Router();
 
-// cheap IP-based DoS shield: runs before auth, so unauthenticated floods never
-// reach the session DB lookup. One fresh instance per route.
 const ipShield = () => createRateLimit({ windowMs: 60_000, limit: 300 });
 
-// per-user limits: run after auth, keyed by ip:userId
 const userLimit = (windowMs: number, limit: number) =>
     createRateLimit({ windowMs, limit, keyGenerator: userAwareKey });
 
-//public, IP-keyed only (default keyGenerator)
+//reviewed
 router.get(
     "/google/login",
     createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
     AuthController.googleAuthRedirect
 );
 
+//reviewed
 router.get(
     "/google/callback",
     createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
     asyncHandler(AuthController.handleGoogleCallback)
 );
 
+//reviewed
 router.get(
     "/me",
     ipShield(),
@@ -35,6 +34,8 @@ router.get(
     userLimit(60_000, 60),
     asyncHandler(AuthController.getMe)
 );
+
+//reviewed only server-side
 router.get(
     "/csrf",
     ipShield(),
@@ -42,13 +43,17 @@ router.get(
     userLimit(60_000, 30),
     asyncHandler(AuthController.getCsrfToken)
 );
+
+//reviewed
 router.get(
     "/sessions",
     ipShield(),
     authenticator,
     userLimit(60_000, 30),
-    asyncHandler(AuthController.listSessions)
+    asyncHandler(AuthController.sessionList)
 );
+
+//reviewed, todo: this is not "delete" its "update"
 router.delete(
     "/sessions/:sessionId",
     ipShield(),
@@ -57,6 +62,8 @@ router.delete(
     userLimit(60_000, 15),
     asyncHandler(AuthController.revokeSession)
 );
+
+//reviewed
 router.post(
     "/logout-all",
     ipShield(),
@@ -65,12 +72,14 @@ router.post(
     userLimit(60_000, 10),
     asyncHandler(AuthController.logoutAll)
 );
+
+//reviewed
 router.post(
     "/logout",
     ipShield(),
     authenticator,
     requireCsrf,
-    userLimit(60_000, 10),
+    userLimit(60_000, 3),
     asyncHandler(AuthController.logout)
 );
 

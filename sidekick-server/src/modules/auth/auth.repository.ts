@@ -12,13 +12,14 @@ const collection = async () => {
 
 export const AuthRepository = {
 
+    //reviewed
     async upsert(userData: { googleId: string; email: string; name: string; picture?: string; emailVerified?: boolean; }) {
         const googleId = userData.googleId;
         const email = normalizeEmail(userData.email);
         const normalized = { ...userData, googleId, email };
 
         try {
-            return await this.upsertByGoogleId(normalized);
+            return await upsertByGoogleId(normalized);
         } catch (err) {
             if (err instanceof MongoServerError && err.code === 11000) {
                 const users = await collection();
@@ -39,40 +40,38 @@ export const AuthRepository = {
                     return byEmail;
                 }
 
-                throw new ApiError(
-                    409,
-                    "An account using this email already exists with a different Google account",
-                    "ACCOUNT_EMAIL_CONFLICT"
-                );
-            }
+                throw new ApiError(409, "An account using this email already exists with a different oogle account", "ACCOUNT_EMAIL_CONFLICT");
+            };
 
             throw err;
-        }
+        };
     },
 
-    async upsertByGoogleId(userData: { googleId: string; email: string; name: string; picture?: string; emailVerified?: boolean; }) {
-        const now = new Date();
-
-        return await (await collection()).findOneAndUpdate(
-            { googleId: userData.googleId },
-            {
-                $set: {
-                    name: userData.name,
-                    picture: userData.picture,
-                    emailVerified: userData.emailVerified,
-                    updatedAt: now,
-                },
-                $setOnInsert: {
-                    googleId: userData.googleId,
-                    email: userData.email,
-                    createdAt: now,
-                },
-            },
-            { upsert: true, returnDocument: "after" }
-        );
-    },
-
+    //reviewed
     async findById(id: ObjectId) {
         return await (await collection()).findOne({ _id: id });
     },
+};
+
+//reviewed
+const upsertByGoogleId = async (userData: { googleId: string; email: string; name: string; picture?: string; emailVerified?: boolean; }) => {
+    const now = new Date();
+
+    return await (await collection()).findOneAndUpdate(
+        { googleId: userData.googleId },
+        {
+            $set: {
+                name: userData.name,
+                picture: userData.picture,
+                emailVerified: userData.emailVerified,
+                updatedAt: now,
+            },
+            $setOnInsert: {
+                googleId: userData.googleId,
+                email: userData.email,
+                createdAt: now,
+            },
+        },
+        { upsert: true, returnDocument: "after" }
+    );
 };

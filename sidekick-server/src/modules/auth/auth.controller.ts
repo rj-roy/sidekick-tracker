@@ -161,11 +161,11 @@ export const AuthController = {
         }
     },
 
+    //reviewed
     async getMe(req: Request, res: Response) {
-        console.log(req, 'requessldsjlfjoisfj');
         if (!req.userId) {
             throw new ApiError(401, "Authentication required");
-        }
+        };
 
         const user = await AuthRepository.findById(req.userId);
         if (!user) {
@@ -183,6 +183,7 @@ export const AuthController = {
         });
     },
 
+    //reviewed
     async getCsrfToken(req: Request, res: Response) {
         if (!req.sessionId) {
             throw new ApiError(401, "Authentication required");
@@ -193,12 +194,13 @@ export const AuthController = {
         });
     },
 
-    async listSessions(req: Request, res: Response) {
+    //reviewed
+    async sessionList(req: Request, res: Response) {
         if (!req.userId) {
             throw new ApiError(401, "Authentication required");
         }
 
-        const sessions = await SessionService.listSessions(req.userId);
+        const sessions = await SessionService.sessionList(req.userId);
 
         const activeSessions = sessions.filter((s) => !s.rotatedToHash);
 
@@ -217,6 +219,7 @@ export const AuthController = {
         return ApiResponse.success(res, "Success", { sessions: data });
     },
 
+    //reviewed, status: ok
     async revokeSession(req: Request, res: Response) {
         if (!req.userId) {
             throw new ApiError(401, "Authentication required");
@@ -232,6 +235,7 @@ export const AuthController = {
             throw new ApiError(400, "Cannot revoke the current session from this endpoint; use logout instead");
         }
 
+        //reviewed
         const revoked = await SessionService.revokeSessionById(
             req.userId,
             new ObjectId(sessionId),
@@ -245,18 +249,20 @@ export const AuthController = {
         return ApiResponse.success(res, "Session revoked");
     },
 
+    //reviewed
     async logoutAll(req: Request, res: Response) {
         if (!req.userId) {
             throw new ApiError(401, "Authentication required");
-        }
+        };
 
         await SessionService.revokeAllForUser(req.userId, "logout-all");
 
         res.clearCookie(env.cookies.raw, clearCookieOptions());
 
-        return ApiResponse.success(res, "All sessions revoked");
+        return ApiResponse.success(res, "All sessions cleared");
     },
 
+    //reviewed
     async logout(req: Request, res: Response) {
         if (req.sessionToken) {
             await SessionService.revokeSession(req.sessionToken, "logout");
