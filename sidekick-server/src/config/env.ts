@@ -48,10 +48,6 @@ const isProduction = nodeEnv === "production";
 
 const port = positiveInt("PORT", 5000);
 
-const rawCookieName = getRequiredEnv("RAW_COOKIE_NAME");
-const oauthStateCookieName = getRequiredEnv("STATE_COOKIE_NAME");
-const oauthVerifierCookieName = getRequiredEnv("VERIFIER_COOKIE_NAME");
-
 const hostify = (name: string): string =>
   isProduction && !name.startsWith("__Host-") ? `__Host-${name}` : name;
 
@@ -96,7 +92,6 @@ const rotationGraceSeconds = nonNegativeInt("SESSION_ROTATION_GRACE_SECONDS", 15
 const revokeOnHighRiskAnomaly =
   (process.env.REVOKE_ON_HIGH_RISK_ANOMALY ?? "true").toLowerCase() === "true";
 
-const googleRedirectUrl = getRequiredEnv("GOOGLE_REDIRECT_URL");
 if (isProduction) {
   const httpsOnlySettings = ["GOOGLE_REDIRECT_URL"].filter(
     (key) => process.env[key]?.startsWith("http://")
@@ -165,17 +160,17 @@ export const env = {
   },
 
   cookies: {
-    raw: hostify(rawCookieName),
-    oauthState: hostify(oauthStateCookieName),
-    oauthVerifier: hostify(oauthVerifierCookieName),
+    raw: hostify(getRequiredEnv("RAW_COOKIE_NAME")),
+    oauthState: hostify(getRequiredEnv("STATE_COOKIE_NAME")),
+    oauthVerifier: hostify(getRequiredEnv("VERIFIER_COOKIE_NAME")),
     secure: isProduction,
-    hostPrefix: isProduction && !rawCookieName.startsWith("__Host-"),
+    hostPrefix: isProduction && !getRequiredEnv("RAW_COOKIE_NAME").startsWith("__Host-"),
   },
 
   google: {
     clientId: getRequiredEnv("GOOGLE_CLIENT_ID"),
     clientSecret: getRequiredEnv("GOOGLE_CLIENT_SECRET"),
-    redirectUrl: googleRedirectUrl,
+    redirectUrl: getRequiredEnv("GOOGLE_REDIRECT_URL"),
     authUrl: getRequiredEnv("GOOGLE_AUTH_URL"),
     tokenUrl: getRequiredEnv("GOOGLE_TOKEN_URL"),
     userInfoUrl: getRequiredEnv("GOOGLE_USERINFO_URL"),

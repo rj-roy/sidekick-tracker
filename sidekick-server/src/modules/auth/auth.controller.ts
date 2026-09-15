@@ -15,7 +15,9 @@ import { generatePkcePair, generateNonce } from "../../utils/pkce.js";
 import { logSecurityEvent } from "../../utils/security-log.js";
 import { AuthFailureGuard } from "../../utils/auth-failure-guard.js";
 
+// under review
 export const AuthController = {
+    //reviewed
     googleAuthRedirect(req: Request, res: Response) {
         const state = crypto.randomUUID();
         const { codeVerifier, codeChallenge } = generatePkcePair();
@@ -43,6 +45,7 @@ export const AuthController = {
         res.redirect(url);
     },
 
+    //reviewed
     async handleGoogleCallback(req: Request, res: Response) {
         const clearOAuthCookies = (): void => {
             res.clearCookie(env.cookies.oauthState, clearCookieOptions());
@@ -52,26 +55,22 @@ export const AuthController = {
         const clientIp = req.ip || "unknown";
 
         if (AuthFailureGuard.isLockedOut(clientIp)) {
-            throw new ApiError(
-                429,
-                "Too many failed sign-in attempts",
-                "AUTH_LOCKED_OUT"
-            );
-        }
+            throw new ApiError(429, "Too many failed sign-in attempts", "AUTH_LOCKED_OUT");
+        };
 
         try {
             const { code, state } = validateLoginCallback(req.query);
             const savedState = req.cookies?.[env.cookies.oauthState];
 
             const stateMatches =
-                typeof savedState === "string" &&
-                state.length === savedState.length &&
-                timingSafeEqual(Buffer.from(savedState), Buffer.from(state));
+                typeof savedState === "string"
+                && state.length === savedState.length
+                && timingSafeEqual(Buffer.from(savedState), Buffer.from(state));
 
             if (!stateMatches) {
                 logSecurityEvent("OAUTH_STATE_MISMATCH");
                 throw new ApiError(400, "OAuth authentication failed", "OAUTH_ERROR");
-            }
+            };
 
             let verifier = "";
             let nonce = "";
@@ -82,7 +81,8 @@ export const AuthController = {
                     const parsed = JSON.parse(pkceRaw) as { v?: string; n?: string };
                     verifier = typeof parsed.v === "string" ? parsed.v : "";
                     nonce = typeof parsed.n === "string" ? parsed.n : "";
-                }
+                };
+
             } catch {
                 // malformed verifier cookie — proceed; token verification still runs
             }
@@ -155,13 +155,14 @@ export const AuthController = {
 
             if (err instanceof ApiError && err.code) {
                 AuthFailureGuard.recordFailure(clientIp, err.code);
-            }
+            };
 
             throw err;
         }
     },
 
     async getMe(req: Request, res: Response) {
+        console.log(req, 'requessldsjlfjoisfj');
         if (!req.userId) {
             throw new ApiError(401, "Authentication required");
         }

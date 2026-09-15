@@ -11,6 +11,7 @@ interface FailureState {
 
 const ipState = new Map<string, FailureState>();
 
+//reviewed
 const pruneFailures = (state: FailureState, now: number): number[] =>
   state.failures.filter((timestamp) => now - timestamp < WINDOW_MS);
 
@@ -34,6 +35,7 @@ const RATE_LIMITED_CODES = new Set([
 ]);
 
 export const AuthFailureGuard = {
+  //reviewed
   recordFailure(ip: string, code?: string): void {
     if (code && !RATE_LIMITED_CODES.has(code)) return;
 
@@ -55,6 +57,7 @@ export const AuthFailureGuard = {
     }
   },
 
+  // todo: confusstion
   isLockedOut(ip: string): boolean {
     const state = ipState.get(ip);
     if (!state) return false;

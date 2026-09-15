@@ -10,6 +10,7 @@ export const cookieOptions = (maxAgeMs: number): CookieOptions => ({
   maxAge: maxAgeMs,
 });
 
+// reviewed
 export const clearCookieOptions = (): CookieOptions => ({
   httpOnly: true,
   secure: env.cookies.secure,

@@ -17,6 +17,8 @@ interface ValidatedSession {
 }
 
 export const SessionService = {
+
+    //reviewed
     async createSession(userId: ObjectId, userAgent: string, ipAddress: string) {
         const now = new Date();
         const expiresAt = new Date(now.getTime() + env.session.expiresInSeconds * 1000);
@@ -165,8 +167,10 @@ export const SessionService = {
     },
 };
 
+//reviewed
 const generateToken = (): string => randomBytes(32).toString('base64url');
 
+//reviewed
 const hash = (value: string): string => createHash("sha256").update(value).digest("hex");
 
 //reviewed todo: session collection don't includes rotation key

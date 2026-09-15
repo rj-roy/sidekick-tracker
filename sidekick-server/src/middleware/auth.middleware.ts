@@ -34,7 +34,7 @@ const extractToken = (
     return { token: req.cookies?.[env.cookies.raw], viaBearer: false };
 };
 
-//reviewed
+//reviewed, toto: extension origin missmatch
 const ensureBearerOrigin = (req: Request): void => {
     const origin = req.get("origin");
 
@@ -56,9 +56,9 @@ export const authenticator = async (req: Request, res: Response, next: NextFunct
         throw new ApiError(401, "Authentication required");
     }
 
-    if (viaBearer) {
-        ensureBearerOrigin(req);
-    }
+    // if (viaBearer) {
+    //     ensureBearerOrigin(req);
+    // }
 
     const userAgent = req.get("user-agent") || "unknown";
     const ipAddress = req.ip || "unknown";

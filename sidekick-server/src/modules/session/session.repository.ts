@@ -10,6 +10,8 @@ const collection = async () => {
 };
 
 export const SessionRepository = {
+    
+    //reviewed
     async upsertSession(doc: SessionDoc): Promise<WithId<SessionDoc>> {
         try {
             const result = await (await collection()).insertOne(doc);
@@ -42,6 +44,7 @@ export const SessionRepository = {
         );
     },
 
+    //reviewed
     async claimRotation(sessionIdHash: string, rotatedAt: Date, rotatedToHash: string): Promise<boolean> {
         const result = await (await collection()).updateOne(
             { sessionIdHash, rotatedAt: { $exists: false }, revokedAt: { $exists: false } },
@@ -51,6 +54,7 @@ export const SessionRepository = {
         return result.modifiedCount === 1;
     },
 
+    //reviewed
     async deleteBySessionIdHash(sessionIdHash: string): Promise<void> {
         await (await collection()).deleteOne({ sessionIdHash });
     },
