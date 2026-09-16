@@ -34,7 +34,7 @@ is held down by the missing session module + jobs.
 |------|-----------|-----|
 | Always-on boot, eager DB, graceful shutdown, indexes, de-serverless | ✅ complete | 2 |
 | Rate-limit infra (in-memory store + generic factory) | ✅ (2 of 5 rules live) | 1 |
-| Session module (`/me`, `/logout`, `requireAuth`, rotation) | ❌ | 0 |
+| Session module (`/me`, `/logout`, `authenticator`, rotation) | ❌ | 0 |
 | Background jobs (polling/cleanup/subscription-sync) | ❌ | 0 |
 | Remaining modules (mailboxes, tracking, emails, billing, webhooks) | ❌ | 0 |
 

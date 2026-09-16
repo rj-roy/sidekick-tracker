@@ -1,14 +1,18 @@
-import { ensureDB } from "../../database/index.js";
 import type { ObjectId, Document } from "mongodb";
 import { env } from "../../config/env.js";
 import { encrypt, decrypt } from "../../utils/crypto.js";
 import type { GoogleAccountTokens } from "./google-account.types.js";
+import { ensureDB } from "../../database/mongodb.js";
+import { ApiError } from "../../utils/ApiError.js";
+import { StoredGoogleTokens } from "../auth/auth.types.js";
+import { normalizeEmail } from "../../utils/normalize-email.js";
 
 const collection = async () => {
   const db = await ensureDB();
   return db.collection(env.mongodb.collections.googleAccounts);
 };
 
+//reviewed
 const extractStoredRefreshToken = (encryptedTokens: string): string | undefined => {
   try {
     const parsed = JSON.parse(decrypt(encryptedTokens)) as { refreshToken?: string };
@@ -19,6 +23,8 @@ const extractStoredRefreshToken = (encryptedTokens: string): string | undefined 
 };
 
 export const GoogleAccountRepository = {
+
+  //reviewed
   async upsertTokens(userId: ObjectId, email: string, tokens: GoogleAccountTokens) {
     const now = new Date();
     const scopeStr = tokens.scope || env.google.scope;
@@ -36,16 +42,16 @@ export const GoogleAccountRepository = {
         accessToken: tokens.accessToken,
         refreshToken,
         tokenType: tokens.tokenType,
-        expiresIn: tokens.expiresIn,
       })
     );
 
     const set: Document = {
-      email,
+      email: normalizeEmail(email),
       encryptedTokens,
       scopes,
       updatedAt: now,
     };
+    
     if (typeof tokens.expiresIn === "number") {
       set.expiresAt = new Date(Date.now() + tokens.expiresIn * 1000);
     }
@@ -60,11 +66,59 @@ export const GoogleAccountRepository = {
     );
   },
 
-  async findByUserId(userId: ObjectId) {
-    return (await collection()).findOne({ userId });
+  //reviewed
+  async updateTokens(userId: ObjectId, tokens: GoogleAccountTokens) {
+    const now = new Date();
+
+    const existing = await (await collection()).findOne({ userId });
+
+    if (!existing?.encryptedTokens) {
+      throw new ApiError(404, "Google account not found");
+    };
+
+    const storedTokens = JSON.parse(decrypt(existing.encryptedTokens)) as StoredGoogleTokens;
+
+    if (typeof storedTokens.refreshToken !== "string") {
+      throw new ApiError(401, "Google authorization required");
+    };
+
+    const refreshToken = tokens.refreshToken ?? storedTokens.refreshToken;
+
+    if (typeof tokens.expiresIn !== "number") {
+      throw new ApiError(502, "Missing token expiration from Google");
+    };
+
+    const encryptedTokens = encrypt(
+      JSON.stringify({
+        accessToken: tokens.accessToken,
+        refreshToken,
+        tokenType: tokens.tokenType,
+      })
+    );
+
+    const expiresAt = new Date(Date.now() + tokens.expiresIn * 1000);
+
+    return (await collection()).findOneAndUpdate(
+      { userId },
+      {
+        $set: {
+          encryptedTokens,
+          expiresAt,
+          updatedAt: now,
+        },
+      },
+      {
+        returnDocument: "after",
+      }
+    );
   },
 
-  async findByEmail(email: string) {
-    return (await collection()).findOne({ email });
+  //reviewed
+  async findByUserId(userId: ObjectId) {
+    return await (await collection()).findOne({ userId });
+  },
+
+  async deleteByUserId(userId: ObjectId) {
+    await (await collection()).deleteOne({ userId });
   },
 };

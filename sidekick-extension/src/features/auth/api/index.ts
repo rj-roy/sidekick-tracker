@@ -1,10 +1,22 @@
 import { apiClient } from "../../../shared/api";
-import { OPEN_SIGN_IN_MESSAGE } from "../../../shared/constants/api";
+import {
+  CSRF_STORAGE_KEY,
+  OPEN_SIGN_IN_MESSAGE,
+  SESSION_STORAGE_KEY,
+} from "../../../shared/constants/api";
+import { sessionSet, sessionRemove } from "../../../shared/utils/storage";
 import type { User } from "../types";
+
+const storeCsrfToken = async (csrfToken?: string) => {
+  if (csrfToken) {
+    await sessionSet({ [CSRF_STORAGE_KEY]: csrfToken });
+  }
+};
 
 export const authApi = {
   async me(): Promise<User> {
-    const data = await apiClient.get<{ user: User; }>("/api/auth/me");
+    const data = await apiClient.get<{ user: User; csrfToken: string }>("/auth/me");
+    await storeCsrfToken(data.csrfToken);
     return data.user;
   },
 
@@ -12,7 +24,11 @@ export const authApi = {
     await chrome.runtime.sendMessage({ type: OPEN_SIGN_IN_MESSAGE });
   },
 
-  logout(): Promise<void> {
-    return apiClient.post<void>("/api/auth/logout");
+  async logout(): Promise<void> {
+    try {
+      await apiClient.post<void>("/auth/logout");
+    } finally {
+      await sessionRemove([SESSION_STORAGE_KEY, CSRF_STORAGE_KEY]);
+    }
   },
 };

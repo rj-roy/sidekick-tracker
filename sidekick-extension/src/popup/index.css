@@ -18,6 +18,10 @@
   --color-signal-hover: #C62828;
   --color-signal-soft: #FDECEC;
 
+  /* Danger */
+  --color-danger: #D93025;
+  --color-danger-soft: #FDECEA;
+
   /* Success */
   --color-success: #2E7D32;
   --color-success-soft: #EAF5EC;

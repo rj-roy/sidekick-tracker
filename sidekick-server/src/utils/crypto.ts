@@ -9,6 +9,7 @@ if (KEY.length !== 32) {
   throw new ApiError(500, "TOKEN_ENCRYPTION_KEY must be a 32-byte base64 value");
 }
 
+//reviewed
 export function encrypt(value: string): string {
   try {
     const iv = crypto.randomBytes(12);
@@ -21,6 +22,7 @@ export function encrypt(value: string): string {
   }
 }
 
+//reviewed
 export function decrypt(value: string): string {
   try {
     const [ivB64, tagB64, dataB64] = value.split(":");

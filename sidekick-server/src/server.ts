@@ -1,21 +1,27 @@
-import { connectDB, initializeIndexes, disconnectDB } from "./database/index.js";
 import { env } from "./config/env.js";
 import { app } from "./app.js";
+import { connectDB, disconnectDB } from "./database/mongodb.js";
+import { initializeIndexes } from "./database/init.indexs.js";
+import { startJobs } from "./jobs/index.js";
 
 const port = env.port;
 
 let server: ReturnType<typeof app.listen> | null = null;
 
 if (env.nodeEnv !== "test") {
-  server = app.listen(port, async () => {
-    try {
-      await connectDB();
-      await initializeIndexes();
-      // TODO: start background jobs here (e.g., startJobs())
-    } catch (err) {
-      console.error("[database] Failed to connect:", err);
-    }
-    console.log(`SideKick server listening`);
+  const start = async (): Promise<void> => {
+    await connectDB();
+    await initializeIndexes();
+    startJobs();
+
+    server = app.listen(port, () => {
+      console.log(`SideKick server listening on ${port}`);
+    });
+  };
+
+  start().catch((err) => {
+    console.error("[server] Failed to start:", err);
+    process.exitCode = 1;
   });
 }
 

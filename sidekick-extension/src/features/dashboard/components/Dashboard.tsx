@@ -1,7 +1,7 @@
-import { ExternalLink, CircleHelp } from "lucide-react";
+import { ExternalLink, CircleHelp, LogOut } from "lucide-react";
 import TrackingStatus from "../../tracking/components/TrackingStatus";
 
-export default function Dashboard() {
+export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   return (
     <main className="p-4">
       <TrackingStatus />
@@ -117,6 +117,17 @@ export default function Dashboard() {
         <button className="flex items-center gap-1 text-[10px] text-muted hover:text-primary">
           <CircleHelp className="size-3" />
           How it works
+        </button>
+      </div>
+
+      {/* Log out */}
+      <div className="mt-3 flex justify-center">
+        <button
+          onClick={onLogout}
+          className="flex items-center gap-1 text-[10px] text-muted hover:text-primary"
+        >
+          <LogOut className="size-3" />
+          Log out
         </button>
       </div>
     </main>

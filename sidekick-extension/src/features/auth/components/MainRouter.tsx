@@ -24,10 +24,19 @@ const MainRouter = () => {
     checkAuth();
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } finally {
+      setUser(null);
+      setStatus("logged-out");
+    }
+  };
+
   if (status === "loading") return <Loading />;
   if (status === "logged-out") return <Login />;
 
-  return <Dashboard />;
+  return <Dashboard onLogout={handleLogout} />;
 };
 
 export default MainRouter;
