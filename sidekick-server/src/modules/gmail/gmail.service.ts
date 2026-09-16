@@ -4,6 +4,7 @@ import { env } from "../../config/env.js";
 import { GoogleOAuthService } from "../google-accounts/google-oauth.service.js";
 import type { GmailMessage, GmailMessageList, GmailProfile } from "./gmail.types.js";
 
+//reviewed
 const gmailFetch = async <T>(userId: ObjectId, path: string): Promise<T> => {
   const token = await GoogleOAuthService.getValidAccessToken(userId);
 
