@@ -10,6 +10,8 @@ const collection = async () => {
 };
 
 export const SessionRepository = {
+    
+    //reviewed
     async upsertSession(doc: SessionDoc): Promise<WithId<SessionDoc>> {
         try {
             const result = await (await collection()).insertOne(doc);
@@ -22,10 +24,12 @@ export const SessionRepository = {
         };
     },
 
+    //reviewed
     async findBySessionIdHash(sessionIdHash: string): Promise<WithId<SessionDoc> | null> {
         return await (await collection()).findOne({ sessionIdHash });
     },
 
+    //reviewed
     async touchSession(sessionIdHash: string, lastSeenAt: Date): Promise<void> {
         await (await collection()).updateOne(
             { sessionIdHash },
@@ -33,6 +37,7 @@ export const SessionRepository = {
         );
     },
 
+    //reviewed
     async revokeSession(sessionIdHash: string, revokeReason: string): Promise<void> {
         await (await collection()).updateOne(
             { sessionIdHash, revokedAt: { $exists: false } },
@@ -40,6 +45,7 @@ export const SessionRepository = {
         );
     },
 
+    //reviewed
     async claimRotation(sessionIdHash: string, rotatedAt: Date, rotatedToHash: string): Promise<boolean> {
         const result = await (await collection()).updateOne(
             { sessionIdHash, rotatedAt: { $exists: false }, revokedAt: { $exists: false } },
@@ -49,10 +55,12 @@ export const SessionRepository = {
         return result.modifiedCount === 1;
     },
 
+    //reviewed
     async deleteBySessionIdHash(sessionIdHash: string): Promise<void> {
         await (await collection()).deleteOne({ sessionIdHash });
     },
 
+    //reviewed
     async findByUserId(userId: ObjectId): Promise<WithId<SessionDoc>[]> {
         return await (await collection())
             .find({ userId })
@@ -60,10 +68,12 @@ export const SessionRepository = {
             .toArray();
     },
 
+    //reviewed
     async findById(sessionId: ObjectId): Promise<WithId<SessionDoc> | null> {
         return await (await collection()).findOne({ _id: sessionId });
     },
 
+    //reviewed
     async revokeById(userId: ObjectId, sessionId: ObjectId, revokeReason: string): Promise<boolean> {
         const result = await (await collection()).updateOne(
             { _id: sessionId, userId, revokedAt: { $exists: false } },
@@ -73,6 +83,7 @@ export const SessionRepository = {
         return result.modifiedCount === 1;
     },
 
+    //reviewed
     async revokeAllForUser(userId: ObjectId, revokeReason: string): Promise<number> {
         const result = await (await collection()).updateMany(
             { userId, revokedAt: { $exists: false } },

@@ -3,6 +3,7 @@ import { ApiError } from "../../utils/ApiError.js";
 const MAX_CODE_LENGTH = 4096;
 const MAX_STATE_LENGTH = 256;
 
+// reviewed
 export const validateLoginCallback = (query: Record<string, unknown>) => {
     const { code, state, error } = query;
 

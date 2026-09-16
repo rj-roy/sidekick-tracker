@@ -12,6 +12,7 @@ const collection = async () => {
   return db.collection(env.mongodb.collections.googleAccounts);
 };
 
+//reviewed
 const extractStoredRefreshToken = (encryptedTokens: string): string | undefined => {
   try {
     const parsed = JSON.parse(decrypt(encryptedTokens)) as { refreshToken?: string };
@@ -22,6 +23,8 @@ const extractStoredRefreshToken = (encryptedTokens: string): string | undefined 
 };
 
 export const GoogleAccountRepository = {
+
+  //reviewed
   async upsertTokens(userId: ObjectId, email: string, tokens: GoogleAccountTokens) {
     const now = new Date();
     const scopeStr = tokens.scope || env.google.scope;
@@ -63,6 +66,7 @@ export const GoogleAccountRepository = {
     );
   },
 
+  //reviewed
   async updateTokens(userId: ObjectId, tokens: GoogleAccountTokens) {
     const now = new Date();
 
@@ -109,6 +113,7 @@ export const GoogleAccountRepository = {
     );
   },
 
+  //reviewed
   async findByUserId(userId: ObjectId) {
     return await (await collection()).findOne({ userId });
   },

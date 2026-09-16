@@ -1,36 +1,39 @@
 import { Router } from "express";
-import type { Request } from "express";
-import { ipKeyGenerator } from "express-rate-limit";
 import { GoogleAccountController } from "./google-account.controller.js";
 import { asyncHandler } from "../../utils/async-handler.js";
-import { createRateLimit } from "../../middleware/rate-limit.middleware.js";
-import { requireAuth } from "../../middleware/auth.middleware.js";
+import { createRateLimit, userAwareKey } from "../../middleware/rate-limit.middleware.js";
+import { authenticator } from "../../middleware/auth.middleware.js";
 import { requireCsrf } from "../../middleware/csrf.middleware.js";
-
-const userAwareKey = (req: Request): string =>
-  `${ipKeyGenerator(req.ip ?? "anon")}:${req.userId?.toHexString() ?? "anon"}`;
 
 const router = Router();
 
+const ipShield = () => createRateLimit({ windowMs: 60_000, limit: 300 });
+
+const userLimit = (limit: number) =>
+    createRateLimit({ windowMs: 60_000, limit, keyGenerator: userAwareKey });
+
 router.get(
     "/",
-    requireAuth,
-    createRateLimit({ windowMs: 60_000, limit: 60, keyGenerator: userAwareKey }),
+    ipShield(),
+    authenticator,
+    userLimit(60),
     asyncHandler(GoogleAccountController.getAccount)
 );
 
 router.post(
     "/refresh",
-    requireAuth,
-    createRateLimit({ windowMs: 60_000, limit: 10, keyGenerator: userAwareKey }),
+    ipShield(),
+    authenticator,
+    userLimit(10),
     requireCsrf,
     asyncHandler(GoogleAccountController.refreshToken)
 );
 
 router.delete(
     "/",
-    requireAuth,
-    createRateLimit({ windowMs: 60_000, limit: 10, keyGenerator: userAwareKey }),
+    ipShield(),
+    authenticator,
+    userLimit(10),
     requireCsrf,
     asyncHandler(GoogleAccountController.disconnect)
 );

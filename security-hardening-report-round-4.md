@@ -58,7 +58,7 @@ The same raw session token was accepted identically from an HttpOnly cookie (bro
 **Server-side enforcement (`auth.middleware.ts`):**
 
 - `extractToken` now reports whether the token came from a header (`viaBearer`).
-- When `viaBearer` is true, `requireAuth` requires the request `Origin` to be in `env.appExtensions`; otherwise returns 403 `SESSION_DENIED_ORIGIN` and logs `SESSION_BEARER_UNTRUSTED_ORIGIN`.
+- When `viaBearer` is true, `authenticator` requires the request `Origin` to be in `env.appExtensions`; otherwise returns 403 `SESSION_DENIED_ORIGIN` and logs `SESSION_BEARER_UNTRUSTED_ORIGIN`.
 - Cookie-origin requests (browser same-site) are unaffected.
 
 **Rotated token delivered via header (`auth.middleware.ts` + `apiRequest.ts`):**

@@ -14,7 +14,7 @@ export const settingsApi = {
     return apiClient.delete<void>("/google-accounts");
   },
 
-  async listSessions(): Promise<SessionsResponse> {
+  async sessionList(): Promise<SessionsResponse> {
     return apiClient.get<SessionsResponse>("/auth/sessions");
   },
 

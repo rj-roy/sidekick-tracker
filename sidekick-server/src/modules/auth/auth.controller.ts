@@ -15,7 +15,9 @@ import { generatePkcePair, generateNonce } from "../../utils/pkce.js";
 import { logSecurityEvent } from "../../utils/security-log.js";
 import { AuthFailureGuard } from "../../utils/auth-failure-guard.js";
 
+// under review
 export const AuthController = {
+    //reviewed
     googleAuthRedirect(req: Request, res: Response) {
         const state = crypto.randomUUID();
         const { codeVerifier, codeChallenge } = generatePkcePair();
@@ -43,6 +45,7 @@ export const AuthController = {
         res.redirect(url);
     },
 
+    //reviewed
     async handleGoogleCallback(req: Request, res: Response) {
         const clearOAuthCookies = (): void => {
             res.clearCookie(env.cookies.oauthState, clearCookieOptions());
@@ -52,26 +55,22 @@ export const AuthController = {
         const clientIp = req.ip || "unknown";
 
         if (AuthFailureGuard.isLockedOut(clientIp)) {
-            throw new ApiError(
-                429,
-                "Too many failed sign-in attempts",
-                "AUTH_LOCKED_OUT"
-            );
-        }
+            throw new ApiError(429, "Too many failed sign-in attempts", "AUTH_LOCKED_OUT");
+        };
 
         try {
             const { code, state } = validateLoginCallback(req.query);
             const savedState = req.cookies?.[env.cookies.oauthState];
 
             const stateMatches =
-                typeof savedState === "string" &&
-                state.length === savedState.length &&
-                timingSafeEqual(Buffer.from(savedState), Buffer.from(state));
+                typeof savedState === "string"
+                && state.length === savedState.length
+                && timingSafeEqual(Buffer.from(savedState), Buffer.from(state));
 
             if (!stateMatches) {
                 logSecurityEvent("OAUTH_STATE_MISMATCH");
                 throw new ApiError(400, "OAuth authentication failed", "OAUTH_ERROR");
-            }
+            };
 
             let verifier = "";
             let nonce = "";
@@ -82,7 +81,8 @@ export const AuthController = {
                     const parsed = JSON.parse(pkceRaw) as { v?: string; n?: string };
                     verifier = typeof parsed.v === "string" ? parsed.v : "";
                     nonce = typeof parsed.n === "string" ? parsed.n : "";
-                }
+                };
+
             } catch {
                 // malformed verifier cookie — proceed; token verification still runs
             }
@@ -155,16 +155,17 @@ export const AuthController = {
 
             if (err instanceof ApiError && err.code) {
                 AuthFailureGuard.recordFailure(clientIp, err.code);
-            }
+            };
 
             throw err;
         }
     },
 
+    //reviewed
     async getMe(req: Request, res: Response) {
         if (!req.userId) {
             throw new ApiError(401, "Authentication required");
-        }
+        };
 
         const user = await AuthRepository.findById(req.userId);
         if (!user) {
@@ -182,6 +183,7 @@ export const AuthController = {
         });
     },
 
+    //reviewed
     async getCsrfToken(req: Request, res: Response) {
         if (!req.sessionId) {
             throw new ApiError(401, "Authentication required");
@@ -192,12 +194,13 @@ export const AuthController = {
         });
     },
 
-    async listSessions(req: Request, res: Response) {
+    //reviewed
+    async sessionList(req: Request, res: Response) {
         if (!req.userId) {
             throw new ApiError(401, "Authentication required");
         }
 
-        const sessions = await SessionService.listSessions(req.userId);
+        const sessions = await SessionService.sessionList(req.userId);
 
         const activeSessions = sessions.filter((s) => !s.rotatedToHash);
 
@@ -216,6 +219,7 @@ export const AuthController = {
         return ApiResponse.success(res, "Success", { sessions: data });
     },
 
+    //reviewed, status: ok
     async revokeSession(req: Request, res: Response) {
         if (!req.userId) {
             throw new ApiError(401, "Authentication required");
@@ -231,6 +235,7 @@ export const AuthController = {
             throw new ApiError(400, "Cannot revoke the current session from this endpoint; use logout instead");
         }
 
+        //reviewed
         const revoked = await SessionService.revokeSessionById(
             req.userId,
             new ObjectId(sessionId),
@@ -244,18 +249,20 @@ export const AuthController = {
         return ApiResponse.success(res, "Session revoked");
     },
 
+    //reviewed
     async logoutAll(req: Request, res: Response) {
         if (!req.userId) {
             throw new ApiError(401, "Authentication required");
-        }
+        };
 
         await SessionService.revokeAllForUser(req.userId, "logout-all");
 
         res.clearCookie(env.cookies.raw, clearCookieOptions());
 
-        return ApiResponse.success(res, "All sessions revoked");
+        return ApiResponse.success(res, "All sessions cleared");
     },
 
+    //reviewed
     async logout(req: Request, res: Response) {
         if (req.sessionToken) {
             await SessionService.revokeSession(req.sessionToken, "logout");

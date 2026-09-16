@@ -28,7 +28,7 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
 
   const loadSessions = async () => {
     try {
-      setSessions((await settingsApi.listSessions()).sessions);
+      setSessions((await settingsApi.sessionList()).sessions);
     } catch {
       setSessions([]);
     }

@@ -17,6 +17,8 @@ interface ValidatedSession {
 }
 
 export const SessionService = {
+
+    //reviewed
     async createSession(userId: ObjectId, userAgent: string, ipAddress: string) {
         const now = new Date();
         const expiresAt = new Date(now.getTime() + env.session.expiresInSeconds * 1000);
@@ -35,7 +37,7 @@ export const SessionService = {
 
             try {
                 const session = await SessionRepository.upsertSession(doc)
-                if(!session){
+                if (!session) {
                     throw new ApiError(501, "Internal Server Error!");
                 };
 
@@ -57,15 +59,12 @@ export const SessionService = {
         throw new ApiError(500, "Failed to create session", "SESSION_CREATE_FAILED");
     },
 
-    isWellFormedToken(token: string): boolean {
-        return TOKEN_REGEX.test(token) && token.length <= 256;
-    },
-
+    //reviewed
     async validateSession(
         token: string,
         rotate?: { userAgent: string; ipAddress: string }
     ): Promise<ValidatedSession> {
-        if (!this.isWellFormedToken(token)) {
+        if (!isWellFormedToken(token)) {
             throw new ApiError(401, "Invalid session token", "SESSION_INVALID");
         }
 
@@ -94,6 +93,7 @@ export const SessionService = {
             throw new ApiError(401, "Authentication required", "SESSION_EXPIRED");
         }
 
+        //todo: rotatedToHash, rotatedAt didn't pushed on db
         if (session.rotatedToHash) {
             const graceMs = env.session.rotationGraceSeconds * 1000;
             const rotatedAt = session.rotatedAt?.getTime() ?? 0;
@@ -106,15 +106,15 @@ export const SessionService = {
         }
 
         if (rotate) {
-            await this.detectAnomaly(session, rotate);
+            await detectAnomaly(session, rotate);
         }
 
         const now = new Date();
         const rotationIntervalMs = env.session.rotationIntervalSeconds * 1000;
         const shouldRotate =
-            rotationIntervalMs > 0 &&
-            rotate &&
-            now.getTime() - session.createdAt.getTime() >= rotationIntervalMs;
+            rotationIntervalMs > 0
+            && rotate
+            && now.getTime() - session.createdAt.getTime() >= rotationIntervalMs;
 
         if (!shouldRotate) {
             await SessionRepository.touchSession(session.sessionIdHash, now);
@@ -130,10 +130,12 @@ export const SessionService = {
         return { session, rotatedToken: rotated.token, rotatedSessionId: rotated.sessionId };
     },
 
+    //reviewed
     async revokeSession(token: string, revokeReason: string): Promise<void> {
         await SessionRepository.revokeSession(hash(token), revokeReason);
     },
 
+    //reviewed
     async revokeAllForUser(userId: ObjectId, revokeReason: string): Promise<number> {
         const count = await SessionRepository.revokeAllForUser(userId, revokeReason);
 
@@ -144,10 +146,12 @@ export const SessionService = {
         return count;
     },
 
-    async listSessions(userId: ObjectId): Promise<WithId<SessionDoc>[]> {
+    //reviewed
+    async sessionList(userId: ObjectId): Promise<WithId<SessionDoc>[]> {
         return SessionRepository.findByUserId(userId);
     },
 
+    //reviewed
     async revokeSessionById(
         userId: ObjectId,
         sessionId: ObjectId,
@@ -165,50 +169,15 @@ export const SessionService = {
 
         return revoked;
     },
-
-    async detectAnomaly(session: WithId<SessionDoc>, rotate: { userAgent: string; ipAddress: string }) {
-        const ipChanged =
-            session.ipAddress !== undefined && session.ipAddress !== null && session.ipAddress !== rotate.ipAddress;
-        const uaChanged =
-            session.userAgent !== undefined && session.userAgent !== null && session.userAgent !== rotate.userAgent;
-
-        if (ipChanged) {
-            logSecurityEvent("SESSION_IP_CHANGED", {
-                userId: session.userId.toHexString(),
-                sessionId: session._id.toHexString(),
-            });
-        }
-
-        if (uaChanged) {
-            logSecurityEvent("SESSION_UA_CHANGED", {
-                userId: session.userId.toHexString(),
-                sessionId: session._id.toHexString(),
-            });
-        }
-
-        const familyChanged =
-            session.userAgent !== undefined &&
-            rotate.userAgent !== undefined &&
-            uaFamily(session.userAgent) !== uaFamily(rotate.userAgent);
-
-        if (ipChanged && familyChanged) {
-            logSecurityEvent("SESSION_HIGH_RISK_ANOMALY", {
-                userId: session.userId.toHexString(),
-                sessionId: session._id.toHexString(),
-            });
-
-            if (env.session.revokeOnHighRiskAnomaly) {
-                await SessionRepository.revokeSession(session.sessionIdHash, "high-risk-anomaly");
-                throw new ApiError(401, "Authentication required", "SESSION_REVOKED");
-            }
-        }
-    },
 };
 
+//reviewed
 const generateToken = (): string => randomBytes(32).toString('base64url');
 
+//reviewed
 const hash = (value: string): string => createHash("sha256").update(value).digest("hex");
 
+//reviewed todo: session collection don't includes rotation key
 const rotateSessionToken = async (
     session: WithId<SessionDoc>,
     rotatedAt: Date,
@@ -262,3 +231,57 @@ const rotateSessionToken = async (
 
     throw new ApiError(500, "Failed to create session", "SESSION_CREATE_FAILED");
 };
+
+//reviewed
+function isWellFormedToken(token: string): boolean {
+    return TOKEN_REGEX.test(token) && token.length <= 256;
+};
+
+//reviewed
+const detectAnomaly = async (
+    session: WithId<SessionDoc>,
+    rotate: { userAgent: string; ipAddress: string }
+) => {
+    const ipChanged =
+        session.ipAddress !== undefined
+        && session.ipAddress !== null
+        && session.ipAddress !== rotate.ipAddress;
+
+    const uaChanged =
+        session.userAgent !== undefined
+        && session.userAgent !== null
+        && session.userAgent !== rotate.userAgent;
+
+    //todo: update the ip on db
+    if (ipChanged) {
+        logSecurityEvent("SESSION_IP_CHANGED", {
+            userId: session.userId.toHexString(),
+            sessionId: session._id.toHexString(),
+        });
+    }
+
+    //todo: revoke(optional) and logout the user
+    if (uaChanged) {
+        logSecurityEvent("SESSION_UA_CHANGED", {
+            userId: session.userId.toHexString(),
+            sessionId: session._id.toHexString(),
+        });
+    }
+
+    const familyChanged =
+        session.userAgent !== undefined
+        && rotate.userAgent !== undefined
+        && uaFamily(session.userAgent) !== uaFamily(rotate.userAgent);
+
+    if (ipChanged && familyChanged) {
+        logSecurityEvent("SESSION_HIGH_RISK_ANOMALY", {
+            userId: session.userId.toHexString(),
+            sessionId: session._id.toHexString(),
+        });
+
+        if (env.session.revokeOnHighRiskAnomaly) {
+            await SessionRepository.revokeSession(session.sessionIdHash, "high-risk-anomaly");
+            throw new ApiError(401, "Authentication required", "SESSION_REVOKED");
+        }
+    }
+}

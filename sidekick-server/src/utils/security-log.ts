@@ -30,6 +30,7 @@ const sanitize = (meta: Record<string, unknown>): Record<string, unknown> => {
   return clean;
 };
 
+// reviewed needs imporvement
 export const logSecurityEvent = (
   event: SecurityEvent,
   meta: Record<string, unknown> = {}

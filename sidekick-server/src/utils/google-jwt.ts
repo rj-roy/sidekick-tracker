@@ -29,12 +29,14 @@ let cachedKeys: GoogleSigningKey[] | null = null;
 let cachedAt = 0;
 let cacheTtlMs = 60_000;
 
+//reviewed
 const parseCacheMaxAge = (header: string | null): number => {
   if (!header) return 3600;
   const match = /max-age=(\d+)/i.exec(header);
   return match ? Number(match[1]) : 3600;
 };
 
+//reviewed
 const fetchGoogleKeys = async (force = false): Promise<GoogleSigningKey[]> => {
   const now = Date.now();
 
@@ -46,7 +48,7 @@ const fetchGoogleKeys = async (force = false): Promise<GoogleSigningKey[]> => {
 
   if (!response.ok) {
     throw new ApiError(502, "Failed to fetch Google signing keys");
-  }
+  };
 
   const body = (await response.json()) as {
     keys?: { kid?: string; n?: string; e?: string }[];
@@ -54,7 +56,7 @@ const fetchGoogleKeys = async (force = false): Promise<GoogleSigningKey[]> => {
 
   if (!Array.isArray(body.keys) || body.keys.length === 0) {
     throw new ApiError(502, "Malformed Google signing keys response");
-  }
+  };
 
   const keys: GoogleSigningKey[] = [];
 
@@ -88,6 +90,7 @@ const verifySignature = (jwt: string, key: KeyObject): boolean => {
   return verifier.verify(key, base64UrlDecode(signatureB64));
 };
 
+//reviewed
 const parseClaims = (payloadB64: string): GoogleIdTokenClaims => {
   try {
     const parsed = JSON.parse(base64UrlDecode(payloadB64).toString("utf8"));
@@ -100,15 +103,17 @@ const parseClaims = (payloadB64: string): GoogleIdTokenClaims => {
   }
 };
 
+//reviewed
 export const verifyGoogleIdToken = async (
   idToken: string,
   expectedNonce: string
 ): Promise<GoogleIdTokenClaims> => {
+
   const parts = idToken.split(".");
 
   if (parts.length !== 3) {
     throw new ApiError(401, "Invalid id_token", "INVALID_ID_TOKEN");
-  }
+  };
 
   const [headerB64, payloadB64] = parts;
 
@@ -138,8 +143,8 @@ export const verifyGoogleIdToken = async (
     throw new ApiError(401, "id_token invalid issuer", "INVALID_ID_TOKEN");
   }
 
-  const audMatches = Array.isArray(claims.aud)
-    ? claims.aud.includes(env.google.clientId)
+  const audMatches = Array.isArray(claims.aud) ?
+    claims.aud.includes(env.google.clientId)
     : claims.aud === env.google.clientId;
 
   if (!audMatches) {

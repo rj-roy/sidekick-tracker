@@ -5,6 +5,7 @@ import { GoogleTokenResponse, GoogleUserInfo } from "./auth.types.js";
 import { verifyGoogleIdToken } from "../../utils/google-jwt.js";
 import { normalizeEmail } from "../../utils/normalize-email.js";
 
+// reviewed
 const upsertOrThrow = async (userData: {
     googleId: string;
     email: string;
@@ -22,11 +23,8 @@ const upsertOrThrow = async (userData: {
 };
 
 export const AuthService = {
-    getGoogleAuthUrl(options: {
-        state: string;
-        codeChallenge: string;
-        nonce: string;
-    }) {
+    //reviewed
+    getGoogleAuthUrl(options: { state: string; codeChallenge: string; nonce: string; }) {
         const params = new URLSearchParams({
             client_id: env.google.clientId,
             redirect_uri: env.google.redirectUrl,
@@ -42,6 +40,7 @@ export const AuthService = {
         return `${env.google.authUrl}?${params.toString()}`
     },
 
+    //reviewed
     async getCallbackCred(code: string, codeVerifier: string, nonce: string) {
         const tokens = await exchangeCodeForTokens(code, codeVerifier);
 
@@ -59,7 +58,7 @@ export const AuthService = {
 
             if (!googleUser.verified_email) {
                 throw new ApiError(403, "Google email is not verified");
-            }
+            };
 
             const fallbackEmail = normalizeEmail(googleUser.email);
             const fallbackSub = googleUser.id;
@@ -92,6 +91,7 @@ export const AuthService = {
     },
 };
 
+//reviewed
 const getUserInfo = async (accessToken: string): Promise<GoogleUserInfo> => {
     const response = await fetch(env.google.userInfoUrl, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -114,7 +114,7 @@ const getUserInfo = async (accessToken: string): Promise<GoogleUserInfo> => {
     return data as GoogleUserInfo;
 };
 
-
+//reviewed
 const exchangeCodeForTokens = async (code: string, codeVerifier: string): Promise<GoogleTokenResponse> => {
     const response = await fetch(env.google.tokenUrl, {
         method: "POST",
