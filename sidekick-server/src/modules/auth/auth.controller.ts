@@ -14,35 +14,41 @@ import { cookieOptions, clearCookieOptions } from "../../utils/cookies.js";
 import { generatePkcePair, generateNonce } from "../../utils/pkce.js";
 import { logSecurityEvent } from "../../utils/security-log.js";
 import { AuthFailureGuard } from "../../utils/auth-failure-guard.js";
+import { encrypt } from "../../utils/crypto.js";
 
 // under review
 export const AuthController = {
     //reviewed
     googleAuthRedirect(req: Request, res: Response) {
-        const state = crypto.randomUUID();
+        const state = encrypt(crypto.randomUUID());
         const { codeVerifier, codeChallenge } = generatePkcePair();
         const nonce = generateNonce();
         const url = AuthService.getGoogleAuthUrl({ state, codeChallenge, nonce });
+        const verifierState = JSON.stringify({ v: codeVerifier, n: nonce });
+        const secureVerifierState = encrypt(verifierState);
 
-        const cookieMaxAge = 10 * 60 * 1000;
 
-        res.cookie(env.cookies.oauthState, state, {
-            httpOnly: true,
-            secure: env.cookies.secure,
-            sameSite: "lax",
-            path: "/",
-            maxAge: cookieMaxAge,
-        });
+        ApiResponse.success(res, "Authentication URL", { url, state, verifierSt: secureVerifierState });
 
-        res.cookie(env.cookies.oauthVerifier, JSON.stringify({ v: codeVerifier, n: nonce }), {
-            httpOnly: true,
-            secure: env.cookies.secure,
-            sameSite: "lax",
-            path: "/",
-            maxAge: cookieMaxAge,
-        });
+        // const cookieMaxAge = 10 * 60 * 1000;
 
-        res.redirect(url);
+        // res.cookie(env.cookies.oauthState, state, {
+        //     httpOnly: true,
+        //     secure: env.cookies.secure,
+        //     sameSite: "lax",
+        //     path: "/",
+        //     maxAge: cookieMaxAge,
+        // });
+
+        // res.cookie(env.cookies.oauthVerifier, JSON.stringify({ v: codeVerifier, n: nonce }), {
+        //     httpOnly: true,
+        //     secure: env.cookies.secure,
+        //     sameSite: "lax",
+        //     path: "/",
+        //     maxAge: cookieMaxAge,
+        // });
+
+        // res.redirect(url);
     },
 
     //reviewed

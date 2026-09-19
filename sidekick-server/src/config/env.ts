@@ -203,4 +203,7 @@ export const env = {
   rateLimit: {
     redisUrl: rateLimitRedisUrl,
   },
+  crypto: {
+    signedHamcSecrete: getRequiredEnv("SIGNED_HMAC_SECRET"),
+  },
 } as const;
