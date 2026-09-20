@@ -20,9 +20,9 @@ router.get(
 );
 
 //reviewed
-router.get(
+router.post(
     "/google/callback",
-    createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
+    // createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
     asyncHandler(AuthController.handleGoogleCallback)
 );
 

@@ -14,21 +14,33 @@ import { cookieOptions, clearCookieOptions } from "../../utils/cookies.js";
 import { generatePkcePair, generateNonce } from "../../utils/pkce.js";
 import { logSecurityEvent } from "../../utils/security-log.js";
 import { AuthFailureGuard } from "../../utils/auth-failure-guard.js";
-import { encrypt } from "../../utils/crypto.js";
+import { decrypt, encrypt } from "../../utils/crypto.js";
 
 // under review
 export const AuthController = {
     //reviewed
     googleAuthRedirect(req: Request, res: Response) {
-        const state = encrypt(crypto.randomUUID());
+        const initialState = crypto.randomUUID();
+        const _og_l = encrypt(crypto.randomUUID());
+        const __u__lt = encrypt(crypto.randomUUID());
+        const b_al_l = encrypt(crypto.randomUUID());
         const { codeVerifier, codeChallenge } = generatePkcePair();
         const nonce = generateNonce();
-        const url = AuthService.getGoogleAuthUrl({ state, codeChallenge, nonce });
-        const verifierState = JSON.stringify({ v: codeVerifier, n: nonce });
-        const secureVerifierState = encrypt(verifierState);
+        const paramsState = encrypt(initialState, true);
+        const cookieState = encrypt(initialState);
 
+        const url = AuthService.getGoogleAuthUrl({ state: paramsState, codeChallenge, nonce });
+        const verifierState = encrypt(JSON.stringify({ v: codeVerifier, n: nonce }));
 
-        ApiResponse.success(res, "Authentication URL", { url, state, verifierSt: secureVerifierState });
+        ApiResponse.success(res, "Authentication URL", {
+            url, states: {
+                _ms__i: cookieState,
+                o_bh_h: verifierState,
+                _og_l,
+                __u__lt,
+                b_al_l
+            },
+        });
 
         // const cookieMaxAge = 10 * 60 * 1000;
 
@@ -53,11 +65,6 @@ export const AuthController = {
 
     //reviewed
     async handleGoogleCallback(req: Request, res: Response) {
-        const clearOAuthCookies = (): void => {
-            res.clearCookie(env.cookies.oauthState, clearCookieOptions());
-            res.clearCookie(env.cookies.oauthVerifier, clearCookieOptions());
-        };
-
         const clientIp = req.ip || "unknown";
 
         if (AuthFailureGuard.isLockedOut(clientIp)) {
@@ -65,8 +72,8 @@ export const AuthController = {
         };
 
         try {
-            const { code, state } = validateLoginCallback(req.query);
-            const savedState = req.cookies?.[env.cookies.oauthState];
+            const { code, state, cookieState, verifierCookieState } = validateLoginCallback(req.body);
+            const savedState = decrypt(cookieState as string);
 
             const stateMatches =
                 typeof savedState === "string"
@@ -82,7 +89,8 @@ export const AuthController = {
             let nonce = "";
 
             try {
-                const pkceRaw = req.cookies?.[env.cookies.oauthVerifier];
+                const pkceRaw = decrypt(verifierCookieState as string);
+                console.log(pkceRaw);
                 if (typeof pkceRaw === "string" && pkceRaw) {
                     const parsed = JSON.parse(pkceRaw) as { v?: string; n?: string };
                     verifier = typeof parsed.v === "string" ? parsed.v : "";
@@ -129,7 +137,13 @@ export const AuthController = {
 
             const data: {
                 user: { id: string; email: string; name: string; picture?: string };
-                csrfToken?: string;
+                sessionCookies?: {
+                    OG_L: string,
+                    _BH_Y: string,
+                    T_ls_: string,
+                    RR_LW__: string,
+                    _r_rl: string
+                };
             } = {
                 user: {
                     id: user._id.toHexString(),
@@ -143,22 +157,22 @@ export const AuthController = {
                 const userAgent = req.get('user-agent') || "unknown";
                 const ip = req.ip || "unknown";
 
-                const { token, sessionId } = await SessionService.createSession(user._id, userAgent, ip);
+                const { token, tokenO, tokenM, tokenP, sessionId } = await SessionService.createSession(user._id, userAgent, ip);
 
                 if (token && sessionId) {
                     logSecurityEvent("OAUTH_LOGIN_SUCCESS", { userId: user._id.toHexString(), sessionId });
-
-                    res.cookie(env.cookies.raw, token, cookieOptions(env.session.expiresInSeconds * 1000));
-
-                    data.csrfToken = csrfTokenFor(sessionId);
+                    data.sessionCookies = {
+                        OG_L: token,
+                        _BH_Y: tokenO,
+                        T_ls_: csrfTokenFor(sessionId),
+                        RR_LW__: tokenM,
+                        _r_rl: tokenP
+                    };
                 };
             };
 
-            clearOAuthCookies();
             return ApiResponse.success(res, "Login Succeed", data);
         } catch (err) {
-            clearOAuthCookies();
-
             if (err instanceof ApiError && err.code) {
                 AuthFailureGuard.recordFailure(clientIp, err.code);
             };

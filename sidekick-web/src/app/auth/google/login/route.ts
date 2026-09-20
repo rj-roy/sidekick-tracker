@@ -1,11 +1,12 @@
 import { signedFetch } from "@/lib/auth/signedFetch";
+import { AuthRes } from "@/types/authResType";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   const res = await signedFetch('/auth/google/login');
 
-  const data = res.data as { url: string, state: string, verifierSt: string };
+  const data = res.data as AuthRes;
 
   if (!res.success) {
     return NextResponse.redirect(new URL(`${process.env.CLIENT_BASE}/auth/error?message${res.message}`));
@@ -14,20 +15,16 @@ export async function GET() {
   const cookieStore = await cookies();
   const cookieMaxAge = 10 * 60;
 
-  cookieStore.set("_o_s_session", data?.state, {
+  const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path: "/",
     maxAge: cookieMaxAge,
-  });
+  };
 
-  cookieStore.set("_o_s_session_v", data?.verifierSt, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: cookieMaxAge,
+  Object.entries(data.states).forEach(([name, value]) => {
+    cookieStore.set(name, value, cookieOptions);
   });
 
   return NextResponse.redirect(data?.url);

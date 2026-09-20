@@ -183,6 +183,7 @@ export const env = {
   session: {
     secret: sessionSecret,
     tokenEncryptionKey: tokenEncryptionKey,
+    secTokenEncryptionKey: getRequiredEnv("SEC_TOKEN_ENCRYPTION_KEY"),
     expiresInSeconds: sessionExpiresInSeconds,
     rotationIntervalSeconds,
     rotationGraceSeconds,
