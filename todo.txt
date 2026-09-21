@@ -1,3 +1,6 @@
+todo: initialize verification collection
+
+
 I went through under `sidekick-server/src`, focused on `modules/auth`, `modules/session`, `middleware/`, `utils/`, `config/env.ts`, and `app.ts`. The auth system is already quite mature (PKCE + nonce + state, `timingSafeEqual` comparisons, hashed session tokens, session rotation with grace window, encrypted Google tokens, HMAC CSRF tokens, security event logging, TTL cleanup). The gaps that remain are specific, real ones I found by reading the code:
 
 **1. CORS allowlist doesn't include the extension origin (`app.ts`)**

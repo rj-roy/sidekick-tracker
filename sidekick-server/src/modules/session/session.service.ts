@@ -64,9 +64,9 @@ export const SessionService = {
         token: string,
         rotate?: { userAgent: string; ipAddress: string }
     ): Promise<ValidatedSession> {
-        if (!isWellFormedToken(token)) {
+        if (!TOKEN_REGEX.test(token) && token.length <= 256) {
             throw new ApiError(401, "Invalid session token", "SESSION_INVALID");
-        }
+        };
 
         const session = await SessionRepository.findBySessionIdHash(hash(token));
         const userIdHex = session?.userId.toHexString();
@@ -121,7 +121,7 @@ export const SessionService = {
             return { session };
         }
 
-        const rotated = await rotateSessionToken(session, now, rotate.userAgent, rotate.ipAddress);
+        const rotated = await rotateSessionToken(session, now);
 
         if (!rotated) {
             return { session };
@@ -181,8 +181,6 @@ const hash = (value: string): string => createHash("sha256").update(value).diges
 const rotateSessionToken = async (
     session: WithId<SessionDoc>,
     rotatedAt: Date,
-    userAgent: string,
-    ipAddress: string
 ): Promise<{ token: string; sessionId: string } | null> => {
     const expiresAt = new Date(rotatedAt.getTime() + env.session.expiresInSeconds * 1000);
 
@@ -195,8 +193,6 @@ const rotateSessionToken = async (
             createdAt: rotatedAt,
             expiresAt,
             lastSeenAt: rotatedAt,
-            userAgent,
-            ipAddress,
         };
 
         try {
