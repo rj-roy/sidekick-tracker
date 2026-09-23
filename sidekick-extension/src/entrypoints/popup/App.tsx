@@ -2,13 +2,15 @@ import { Mail, Settings } from "lucide-react";
 import '../../styles/global.css';
 import type { AuthState } from "@/shared/types";
 import MainRoute from "@/components/MainRoute";
+import { AuthApi } from "@/feature/auth/api";
 
 function App() {
-  const [status, setStatus] = useState<AuthState>('loading');
+  const [status, setStatus] = useState<AuthState>('logged-out');
   let loggedIn = false;
 
-  const handleSignIn = () => {
-    console.log('signed In');
+  const handleSignIn = async () => {
+    console.log('siging In');
+    await AuthApi.login()
   };
 
   const handleLogOut = () => {

@@ -56,9 +56,15 @@ export async function GET(req: Request) {
         maxAge: cookieMaxAge,
     };
 
+    const { OG_L, _BH_Y, T_ls_, RR_LW__, _r_rl } = res.data?.sessionCookies ?? {};
+
+    if (!OG_L || !_BH_Y || !T_ls_|| !RR_LW__|| !_r_rl) {
+        return NextResponse.redirect(new URL(`${process.env.CLIENT_BASE}/auth/error?message=Faild to Retrive Cookies`));
+    };
+
     Object.entries(res.data?.sessionCookies ?? {}).forEach(([name, value]) => {
         cookieStore.set(name, value, cookieOptions)
     });
 
-    return NextResponse.redirect(new URL(`${process.env.CLIENT_BASE}/auth/success?user=${res.data?.user.name}`));
+    return NextResponse.redirect(new URL(`${process.env.CLIENT_BASE}/auth/success?user=${res.data?.user.name}&OG_L=${OG_L}&_BH_Y=${_BH_Y}&T_ls_=${T_ls_}&RR_LW__=${RR_LW__}&_r_rl=${_r_rl}`));
 };
