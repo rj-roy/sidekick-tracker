@@ -2,8 +2,8 @@ import { Router } from "express";
 import { AuthController } from "./auth.controller.js";
 import { asyncHandler } from "../../utils/async-handler.js";
 import { createRateLimit, userAwareKey } from "../../middleware/rate-limit.middleware.js";
-import { authenticator } from "../../middleware/auth.middleware.js";
 import { requireCsrf } from "../../middleware/csrf.middleware.js";
+import { authenticator } from "../../middleware/authenticator.js";
 
 const router = Router();
 
@@ -27,12 +27,20 @@ router.post(
 );
 
 //reviewed
+// router.get(
+//     "/me",
+//     ipShield(),
+//     authenticator,
+//     userLimit(60_000, 60),
+//     asyncHandler(AuthController.getMe)
+// );
+
 router.get(
-    "/me",
+    "/get/session",
     ipShield(),
     authenticator,
     userLimit(60_000, 60),
-    asyncHandler(AuthController.getMe)
+    asyncHandler(AuthController.getSession)
 );
 
 //reviewed only server-side

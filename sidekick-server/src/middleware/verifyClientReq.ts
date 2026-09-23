@@ -1,7 +1,9 @@
 import crypto from "crypto";
 import type { Request, Response, NextFunction } from "express";
 import { env } from "../config/env.js";
-import { ApiResponse } from "../utils/ApiRsponse.js";
+import { deny } from "../utils/denyReq.js";
+import { verifyExReq } from "./verifyExReq.js";
+import { ObjectId } from "mongodb";
 
 declare module "http" {
     interface IncomingMessage { rawBody?: Buffer }
@@ -21,24 +23,21 @@ const secrets = () =>
     [env.crypto.signedHamcSecrete, process.env.INTERNAL_HMAC_SECRET_PREV].filter(Boolean) as string[];
 
 export function verifyClientReq(req: Request, res: Response, next: NextFunction) {
-    const deny = () => {
-        res.status(403)
-            .type('application/xml')
-            .send(
-                `<?xml version="1.0" encoding="UTF-8"?>
-                    <error>
-                        <message>forbidden</message>
-                    </error>`
-            );
+    const reqFrom = req.get("x-client-type");
+    const extensionId = req.get("x-extension-id");
+
+    if (reqFrom === "extension" && extensionId) {
+        return verifyExReq(req, res, next, extensionId)
     };
 
-    const ts = req.header("x-ts");
-    const nonce = req.header("x-nonce");
-    const sig = req.header("x-sig");
-    if (!ts || !nonce || !sig || !/^[0-9a-f]{64}$/.test(sig)) return deny();
+    const ts = req.get("x-ts");
+    const nonce = req.get("x-nonce");
+    const sig = req.get("x-sig");
 
-    if (!(Math.abs(Date.now() - Number(ts)) <= MAX_SKEW_MS)) return deny();
-    if (usedNounces.has(nonce)) return deny();
+    if (!ts || !nonce || !sig || !/^[0-9a-f]{64}$/.test(sig)) return deny(res);
+
+    if (!(Math.abs(Date.now() - Number(ts)) <= MAX_SKEW_MS)) return deny(res);
+    if (usedNounces.has(nonce)) return deny(res);
 
     const bodyHash = sha256(req.rawBody ?? Buffer.alloc(0));
     const canonical = [req.method, req.originalUrl, ts, nonce, bodyHash].join("\n");
@@ -48,7 +47,7 @@ export function verifyClientReq(req: Request, res: Response, next: NextFunction)
         const expected = crypto.createHmac("sha256", s).update(canonical).digest();
         return crypto.timingSafeEqual(given, expected);
     });
-    if (!ok) return deny();
+    if (!ok) return deny(res);
 
     usedNounces.set(nonce, Date.now() + MAX_SKEW_MS * 2);
     next();

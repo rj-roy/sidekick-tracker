@@ -182,24 +182,25 @@ export const AuthController = {
     },
 
     //reviewed
-    async getMe(req: Request, res: Response) {
-        if (!req.userId) {
-            throw new ApiError(401, "Authentication required");
-        };
+    async getSession(req: Request, res: Response) {
+        // console.log(req.headers);
+        // if (!req.userId) {
+        //     throw new ApiError(401, "Authentication required");
+        // };
 
-        const user = await AuthRepository.findById(req.userId);
-        if (!user) {
-            throw new ApiError(404, "User not found");
-        }
+        // const user = await AuthRepository.findById(req.userId);
+        // if (!user) {
+        //     throw new ApiError(404, "User not found");
+        // }
 
         return ApiResponse.success(res, "Success", {
             user: {
-                id: user._id,
-                email: user.email,
-                name: user.name,
-                picture: user.picture,
+                id: "user._id",
+                email: "user.email",
+                name: "user.name",
+                picture: "user.picture",
             },
-            csrfToken: req.sessionId ? csrfTokenFor(req.sessionId) : undefined,
+            csrfToken: req.sessionId ? "csrfTokenFor(req.sessionId)" : undefined,
         });
     },
 

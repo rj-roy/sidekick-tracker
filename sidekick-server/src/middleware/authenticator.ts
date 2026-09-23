@@ -4,6 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { SessionService } from "../modules/session/session.service.js";
 import { csrfTokenFor } from "./csrf.middleware.js";
 import { logSecurityEvent } from "../utils/security-log.js";
+import { extractBearer } from "../utils/extractBearer.js";
 
 declare global {
     namespace Express {
@@ -15,26 +16,8 @@ declare global {
     }
 }
 
-//reviewd
-const extractToken = (req: Request): { token: string } => {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader?.startsWith("Bearer ")) {
-        throw new ApiError(401, "Authentication required", "SESSION_INVALID");
-    };
-
-    const token = authHeader.slice(7);
-
-    if (!token) {
-        throw new ApiError(401, "Authentication required", "SESSION_INVALID");
-    };
-
-    return { token };
-};
-
-//reviewed, todo: untrackted
 export const authenticator = async (req: Request, res: Response, next: NextFunction) => {
-    const { token } = extractToken(req);
+    const { token } = extractBearer(req);
 
     if (!token) {
         throw new ApiError(401, "Authentication required");
@@ -47,8 +30,8 @@ export const authenticator = async (req: Request, res: Response, next: NextFunct
 
     if (result.rotatedToken && result.rotatedSessionId) {
         logSecurityEvent("SESSION_BEARER_UNTRUSTED_ORIGIN", { path: req.path });
-        res.setHeader("x-rCsrf-token", csrfTokenFor(result.rotatedSessionId));
-        res.setHeader("x-rSession-token", result.rotatedToken);
+        res.setHeader("x-r-csrf-token", csrfTokenFor(result.rotatedSessionId));
+        res.setHeader("x-r-session-token", result.rotatedToken);
     };
 
     req.userId = result.session.userId;

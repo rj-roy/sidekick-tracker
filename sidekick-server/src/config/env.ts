@@ -156,6 +156,7 @@ export const env = {
       emailOpens: getRequiredEnv("OPEN_EMAIL_COLL"),
       googleAccounts: getRequiredEnv("GOOGLE_ACCOUNTS_COLLECTION"),
       sessions: getRequiredEnv("SESSIONS_COLLECTION"),
+      rExCollection: getRequiredEnv("REGISTERED_EXTENSION")
     },
   },
 

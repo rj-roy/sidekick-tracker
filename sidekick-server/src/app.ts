@@ -1,5 +1,4 @@
 import express from "express";
-import helmet from "helmet";
 import { env } from "./config/env.js";
 import { errorHandler, notFound } from "./middleware/error.middleware.js";
 

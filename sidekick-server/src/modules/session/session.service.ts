@@ -59,7 +59,7 @@ export const SessionService = {
         throw new ApiError(500, "Failed to create session", "SESSION_CREATE_FAILED");
     },
 
-    //reviewed
+    //reviewed: todo: polish detectAnomaly
     async validateSession(
         token: string,
         rotate?: { userAgent: string; ipAddress: string }

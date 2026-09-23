@@ -4,6 +4,7 @@ import Loading from "./Loading";
 import Login from "./Login";
 import Dashboard from "@/feature/dashboard/components/DashBoard";
 import { apiClient } from "@/shared/api/client";
+import { AuthApi } from "@/feature/auth/api";
 
 interface MainRoute {
     status: AuthState;
@@ -15,13 +16,18 @@ interface MainRoute {
 const MainRoute = ({ status, setStatus, handleSignIn, handleLogOut }: MainRoute) => {
     const [user, setUser] = useState<User | null>(null);
 
-    useEffect(()=>{
-        const checkAuth = () => {
-            apiClient.get('/auth/me');
+    useEffect(() => {
+        const loadSession = async () => {
+            try {
+                const user = await AuthApi.getSession();
+                console.log(user, "userldkfjs");
+            } catch (error) {
+                console.error("Failed to get session:", error);
+            }
         };
 
-        checkAuth();
-    },[]);
+        loadSession();
+    }, []);
 
     if (status === "loading") return <Loading />;
     if (status === "logged-out") return <Login handleSignIn={handleSignIn} />;
