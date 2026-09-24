@@ -1,38 +1,72 @@
-import type { User, AuthState } from "@/shared/types";
-import type React from "react";
-import Loading from "./Loading";
-import Login from "./Login";
-import Dashboard from "@/feature/dashboard/components/DashBoard";
-import { apiClient } from "@/shared/api/client";
-import { AuthApi } from "@/feature/auth/api";
+// import type React from "react";
+// import { useEffect, useState } from "react";
 
-interface MainRoute {
-    status: AuthState;
-    setStatus: React.Dispatch<React.SetStateAction<AuthState>>;
-    handleSignIn: () => void;
-    handleLogOut: () => void;
-};
+// import Loading from "./Loading";
+// import Login from "./Login";
+// import Dashboard from "@/feature/dashboard/components/DashBoard";
+// import { AuthApi } from "@/feature/auth/api";
 
-const MainRoute = ({ status, setStatus, handleSignIn, handleLogOut }: MainRoute) => {
-    const [user, setUser] = useState<User | null>(null);
+// // interface MainRouteProps {
+// //     status: AuthState;
+// //     setStatus: React.Dispatch<React.SetStateAction<AuthState>>;
+// //     handleSignIn: () => void;
+// //     handleLogOut: () => void;
+// // }
 
-    useEffect(() => {
-        const loadSession = async () => {
-            try {
-                const user = await AuthApi.getSession();
-                console.log(user, "userldkfjs");
-            } catch (error) {
-                console.error("Failed to get session:", error);
-            }
-        };
+// const MainRoute = ({ status, setStatus, handleSignIn, handleLogOut }: MainRouteProps) => {
+//     // const [user, setUser] = useState<User | null>(null);
 
-        loadSession();
-    }, []);
+//     // useEffect(() => {
+//     //     let mounted = true;
 
-    if (status === "loading") return <Loading />;
-    if (status === "logged-out") return <Login handleSignIn={handleSignIn} />;
+//     //     const loadSession = async () => {
+//     //         setStatus("loading");
 
-    return <Dashboard handleLogOut={handleLogOut} />;
-};
+//     //         try {
+//     //             const sessionUser = await AuthApi.getSession();
 
-export default MainRoute;
+//     //             if (!mounted) return;
+
+//     //             if (sessionUser) {
+//     //                 setUser(sessionUser);
+//     //                 setStatus("logged-in");
+//     //             } else {
+//     //                 setUser(null);
+//     //                 setStatus("logged-out");
+//     //             }
+//     //         } catch (error) {
+//     //             if (!mounted) return;
+
+//     //             console.error("Failed to get session:", error);
+//     //             setUser(null);
+//     //             setStatus("logged-out");
+//     //         }
+//     //     };
+
+//     //     loadSession();
+
+//     //     return () => {
+//     //         mounted = false;
+//     //     };
+//     // }, [setStatus]);
+
+//     // switch (status) {
+//     //     case "loading":
+//     //         return <Loading />;
+
+//     //     case "logged-out":
+//     //         return <Login handleSignIn={handleSignIn} />;
+
+//     //     case "logged-in":
+//     //         return user ? (
+//     //             <Dashboard user={user} handleLogOut={handleLogOut} />
+//     //         ) : (
+//     //             <Loading />
+//     //         );
+
+//     //     default:
+//     //         return null;
+//     // }
+// };
+
+// export default MainRoute;

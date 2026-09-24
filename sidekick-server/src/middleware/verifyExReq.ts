@@ -10,6 +10,7 @@ export async function verifyExReq(
     extensionId: string,
 ) {
     try {
+        //todo: validate the google account
         const valid = await rExRepository.isExistExtId(extensionId);
         if(!valid) return deny(res);
         next();

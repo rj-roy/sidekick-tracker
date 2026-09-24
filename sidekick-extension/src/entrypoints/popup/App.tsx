@@ -1,11 +1,26 @@
 import { Mail, Settings } from "lucide-react";
 import '../../styles/global.css';
-import type { AuthState } from "@/shared/types";
-import MainRoute from "@/components/MainRoute";
 import { AuthApi } from "@/feature/auth/api";
+import { useSession } from "@/providers/sessionProvider";
 
 function App() {
-  const [status, setStatus] = useState<AuthState>('logged-out');
+  // const { auth } = useSession();
+  // console.log(auth, "authljkdlf");
+  // const [status, setStatus] = useState<AuthState>('logged-out');
+
+  const { session } = useSession();
+  console.log(session, "session nlol");
+
+  // useEffect(() => {
+  //   const session = async () => {
+  //     const session = await AuthApi.getSession();
+  //     console.log(session, session);
+  //   };
+
+  //   session();
+  // }, [])
+
+
   let loggedIn = false;
 
   const handleSignIn = async () => {
@@ -19,7 +34,7 @@ function App() {
 
   return (
     <>
-      <body className="w-[410px] bg-page text-primary">
+      <div className="w-[410px] bg-page text-primary">
         <header className="flex items-center justify-between border-b border-border bg-surface px-5 py-4">
           <div className="flex items-center gap-2.5">
             <div className="flex size-8 items-center justify-center rounded-lg bg-signal-soft">
@@ -45,10 +60,10 @@ function App() {
         </header>
 
         <main>
-          <MainRoute status={status} setStatus={setStatus} handleSignIn={handleSignIn} handleLogOut={handleLogOut} />
+          {/* <MainRoute status={status} setStatus={setStatus} handleSignIn={handleSignIn} handleLogOut={handleLogOut} /> */}
         </main>
 
-      </body>
+      </div>
     </>
   );
 }

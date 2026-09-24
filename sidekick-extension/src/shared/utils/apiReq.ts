@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "../constants/api";
-import type { ApiRes } from "../types/apiTypes";
+import type { ApiRes } from "../types/ApiTypes";
 import { apiClientError } from "./apiClientError";
 
 const isStorageKeyLive = (): void => {
@@ -23,11 +23,6 @@ export const apiReq = async <T>(path: string, init?: RequestInit): Promise<T> =>
   const sessionToken = stored["OG_L"] as string | undefined;
   const csrfToken = stored["T_ls_"] as string | undefined;
   const extensionId = browser.runtime.id;
-
-  console.log(stored);
-  console.log(sessionToken);
-  console.log(csrfToken);
-  console.log(extensionId);
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -53,7 +48,6 @@ export const apiReq = async <T>(path: string, init?: RequestInit): Promise<T> =>
   }
 
   const body = (await res.json().catch(() => null)) as ApiRes<T> | null;
-  console.log(body, "body console");
 
   if (!res.ok || !body?.success) {
     throw new apiClientError(res.status, body?.message ?? "Request failed");
