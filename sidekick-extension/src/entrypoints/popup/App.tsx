@@ -2,6 +2,7 @@ import { Mail, Settings } from "lucide-react";
 import '../../styles/global.css';
 import { AuthApi } from "@/feature/auth/api";
 import { useSession } from "@/providers/sessionProvider";
+import MainRoute from "@/components/MainRoute";
 
 function App() {
   // const { auth } = useSession();
@@ -60,7 +61,7 @@ function App() {
         </header>
 
         <main>
-          {/* <MainRoute status={status} setStatus={setStatus} handleSignIn={handleSignIn} handleLogOut={handleLogOut} /> */}
+          <MainRoute session={session} handleSignIn={handleSignIn} handleLogOut={handleLogOut} />
         </main>
 
       </div>

@@ -2,8 +2,6 @@ import crypto from "crypto";
 import type { Request, Response, NextFunction } from "express";
 import { env } from "../config/env.js";
 import { deny } from "../utils/denyReq.js";
-import { verifyExReq } from "./verifyExReq.js";
-import { ObjectId } from "mongodb";
 
 declare module "http" {
     interface IncomingMessage { rawBody?: Buffer }
@@ -23,13 +21,6 @@ const secrets = () =>
     [env.crypto.signedHamcSecrete, process.env.INTERNAL_HMAC_SECRET_PREV].filter(Boolean) as string[];
 
 export function verifyClientReq(req: Request, res: Response, next: NextFunction) {
-    const reqFrom = req.get("x-client-type");
-    const extensionId = req.get("x-extension-id");
-
-    if (reqFrom === "extension" && extensionId) {
-        return verifyExReq(req, res, next, extensionId)
-    };
-
     const ts = req.get("x-ts");
     const nonce = req.get("x-nonce");
     const sig = req.get("x-sig");

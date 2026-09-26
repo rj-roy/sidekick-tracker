@@ -1,5 +1,5 @@
 import { signedFetch } from "@/lib/auth/signedFetch";
-import { cookies } from "next/headers";
+import { deleteCookie, getCookie, setCookie } from "@/lib/cookies";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
@@ -10,11 +10,10 @@ export async function GET(req: Request) {
         return NextResponse.redirect(new URL(`${process.env.CLIENT_BASE}/auth/error?message=${error}`));
     };
 
-    const cookieStore = await cookies();
-    const cookieNames = ["__u__lt", "_ms__i", "_og_l", "b_al_l", "o_bh_h",];
+    const cookieNames = ["_ms__i", "o_bh_h",];
 
     const cookieValues = Object.fromEntries(
-        cookieNames.map((name) => [name, cookieStore.get(name)?.value])
+        await Promise.all(cookieNames.map(async (name) => [name, await getCookie(name)] as const))
     );
 
     if (cookieNames.some((name) => !cookieValues[name])) {
@@ -31,40 +30,32 @@ export async function GET(req: Request) {
             body: {
                 paramsState,
                 paramsCode,
-                __u__lt: cookieValues.__u__lt,
                 _ms__i: cookieValues._ms__i,
-                _og_l: cookieValues._og_l,
-                b_al_l: cookieValues.b_al_l,
                 o_bh_h: cookieValues.o_bh_h,
             },
         });
 
+    console.log(res, 'resll');
+
     for (const name of cookieNames) {
-        cookieStore.delete(name);
+        await deleteCookie(name);
     };
 
     if (!res.success) {
         return NextResponse.redirect(new URL(`${process.env.CLIENT_BASE}/auth/error?message=server-error`));
     };
 
+    const { OG_L, T_ls_ } = res.data?.sessionCookies ?? {};
+
     const cookieMaxAge = 10 * 60 * 1000;
-    const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax" as const,
-        path: "/",
-        maxAge: cookieMaxAge,
-    };
 
-    const { OG_L, _BH_Y, T_ls_, RR_LW__, _r_rl } = res.data?.sessionCookies ?? {};
-
-    if (!OG_L || !_BH_Y || !T_ls_|| !RR_LW__|| !_r_rl) {
+    if (!OG_L || !T_ls_) {
         return NextResponse.redirect(new URL(`${process.env.CLIENT_BASE}/auth/error?message=Faild to Retrive Cookies`));
     };
 
-    Object.entries(res.data?.sessionCookies ?? {}).forEach(([name, value]) => {
-        cookieStore.set(name, value, cookieOptions)
+    Object.entries(res.data?.sessionCookies ?? {}).forEach(async ([name, value]) => {
+        await setCookie(name, value, cookieMaxAge);
     });
 
-    return NextResponse.redirect(new URL(`${process.env.CLIENT_BASE}/auth/success?user=${res.data?.user.name}&OG_L=${OG_L}&_BH_Y=${_BH_Y}&T_ls_=${T_ls_}&RR_LW__=${RR_LW__}&_r_rl=${_r_rl}`));
+    return NextResponse.redirect(new URL(`${process.env.CLIENT_BASE}/auth/success?user=${res.data?.user.name}`));
 };

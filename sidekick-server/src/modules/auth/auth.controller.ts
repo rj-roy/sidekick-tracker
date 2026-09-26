@@ -21,9 +21,6 @@ export const AuthController = {
     //reviewed
     googleAuthRedirect(req: Request, res: Response) {
         const initialState = crypto.randomUUID();
-        const _og_l = encrypt(crypto.randomUUID());
-        const __u__lt = encrypt(crypto.randomUUID());
-        const b_al_l = encrypt(crypto.randomUUID());
         const { codeVerifier, codeChallenge } = generatePkcePair();
         const nonce = generateNonce();
         const paramsState = encrypt(initialState, true);
@@ -36,31 +33,8 @@ export const AuthController = {
             url, states: {
                 _ms__i: cookieState,
                 o_bh_h: verifierState,
-                _og_l,
-                __u__lt,
-                b_al_l
             },
         });
-
-        // const cookieMaxAge = 10 * 60 * 1000;
-
-        // res.cookie(env.cookies.oauthState, state, {
-        //     httpOnly: true,
-        //     secure: env.cookies.secure,
-        //     sameSite: "lax",
-        //     path: "/",
-        //     maxAge: cookieMaxAge,
-        // });
-
-        // res.cookie(env.cookies.oauthVerifier, JSON.stringify({ v: codeVerifier, n: nonce }), {
-        //     httpOnly: true,
-        //     secure: env.cookies.secure,
-        //     sameSite: "lax",
-        //     path: "/",
-        //     maxAge: cookieMaxAge,
-        // });
-
-        // res.redirect(url);
     },
 
     //reviewed
@@ -90,7 +64,6 @@ export const AuthController = {
 
             try {
                 const pkceRaw = decrypt(verifierCookieState as string);
-                console.log(pkceRaw);
                 if (typeof pkceRaw === "string" && pkceRaw) {
                     const parsed = JSON.parse(pkceRaw) as { v?: string; n?: string };
                     verifier = typeof parsed.v === "string" ? parsed.v : "";
@@ -137,13 +110,7 @@ export const AuthController = {
 
             const data: {
                 user: { id: string; email: string; name: string; picture?: string };
-                sessionCookies?: {
-                    OG_L: string,
-                    _BH_Y: string,
-                    T_ls_: string,
-                    RR_LW__: string,
-                    _r_rl: string
-                };
+                sessionCookies?: { OG_L: string, T_ls_: string, };
             } = {
                 user: {
                     id: user._id.toHexString(),
@@ -157,16 +124,13 @@ export const AuthController = {
                 const userAgent = req.get('user-agent') || "unknown";
                 const ip = req.ip || "unknown";
 
-                const { token, tokenO, tokenM, tokenP, sessionId } = await SessionService.createSession(user._id, userAgent, ip);
+                const { token, sessionId } = await SessionService.createSession(user._id, userAgent, ip);
 
                 if (token && sessionId) {
                     logSecurityEvent("OAUTH_LOGIN_SUCCESS", { userId: user._id.toHexString(), sessionId });
                     data.sessionCookies = {
                         OG_L: token,
-                        _BH_Y: tokenO,
                         T_ls_: csrfTokenFor(sessionId),
-                        RR_LW__: tokenM,
-                        _r_rl: tokenP
                     };
                 };
             };

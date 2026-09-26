@@ -1,6 +1,6 @@
 import { signedFetch } from "@/lib/auth/signedFetch";
-import { AuthRes } from "@/types/authResType";
-import { cookies } from "next/headers";
+import { setCookie } from "@/lib/cookies";
+import { AuthRes } from "@/types/authTypes";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -12,20 +12,11 @@ export async function GET() {
     return NextResponse.redirect(new URL(`${process.env.CLIENT_BASE}/auth/error?message${res.message}`));
   };
 
-  const cookieStore = await cookies();
   const cookieMaxAge = 10 * 60;
 
-  const cookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge: cookieMaxAge,
-  };
-
-  Object.entries(data.states).forEach(([name, value]) => {
-    cookieStore.set(name, value, cookieOptions);
+  Object.entries(data.states).forEach(async ([name, value]) => {
+    await setCookie(name, value, cookieMaxAge)
   });
 
   return NextResponse.redirect(data?.url);
-}
+};

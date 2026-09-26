@@ -7,6 +7,11 @@ const MAX_STATE_LENGTH = 256;
 // reviewed
 export const validateLoginCallback = (body: Record<string, unknown>) => {
     const { paramsCode, paramsState, _ms__i, o_bh_h } = body;
+
+    if(!paramsCode || !paramsCode || !_ms__i || !o_bh_h){
+        throw new ApiError(404, "Invalid authorization");
+    };
+
     const decryptedState = decrypt(paramsState as string, true);
 
     if (typeof paramsCode !== "string" || !paramsCode.trim()) {
@@ -22,11 +27,11 @@ export const validateLoginCallback = (body: Record<string, unknown>) => {
 
     if (trimmedCode.length > MAX_CODE_LENGTH) {
         throw new ApiError(400, "Authorization code is too long", "OAUTH_ERROR");
-    }
+    };
 
     if (trimmedState.length > MAX_STATE_LENGTH) {
         throw new ApiError(400, "State parameter is too long", "OAUTH_ERROR");
-    }
+    };
 
     return { code: trimmedCode, state: trimmedState, cookieState: _ms__i, verifierCookieState: o_bh_h };
 };

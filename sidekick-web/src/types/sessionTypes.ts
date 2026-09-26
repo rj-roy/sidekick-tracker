@@ -4,3 +4,7 @@ export type User = {
   name: string;
   picture: string;
 };
+
+export type Session = {
+  demo: boolean
+};

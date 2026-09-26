@@ -46,7 +46,7 @@ export const SessionService = {
                     sessionId: session._id.toHexString(),
                 });
 
-                return { token, tokenO: generateToken(), tokenM: generateToken(), tokenP: generateToken(), sessionId: session._id.toHexString() };
+                return { token, sessionId: session._id.toHexString() };
 
             } catch (err) {
                 if (err instanceof ApiError && err.code === "SESSION_COLLISION" && attempt === 0) {

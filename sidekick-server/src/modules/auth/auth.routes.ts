@@ -2,7 +2,6 @@ import { Router } from "express";
 import { AuthController } from "./auth.controller.js";
 import { asyncHandler } from "../../utils/async-handler.js";
 import { createRateLimit, userAwareKey } from "../../middleware/rate-limit.middleware.js";
-import { requireCsrf } from "../../middleware/csrf.middleware.js";
 import { authenticator } from "../../middleware/authenticator.js";
 
 const router = Router();
@@ -22,7 +21,7 @@ router.get(
 //reviewed
 router.post(
     "/google/callback",
-    // createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
+    createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
     asyncHandler(AuthController.handleGoogleCallback)
 );
 
@@ -66,7 +65,7 @@ router.delete(
     "/sessions/:sessionId",
     ipShield(),
     authenticator,
-    requireCsrf,
+    // requireCsrf,
     userLimit(60_000, 15),
     asyncHandler(AuthController.revokeSession)
 );
@@ -76,7 +75,7 @@ router.post(
     "/logout-all",
     ipShield(),
     authenticator,
-    requireCsrf,
+    // requireCsrf,
     userLimit(60_000, 10),
     asyncHandler(AuthController.logoutAll)
 );
@@ -86,7 +85,7 @@ router.post(
     "/logout",
     ipShield(),
     authenticator,
-    requireCsrf,
+    // requireCsrf,
     userLimit(60_000, 3),
     asyncHandler(AuthController.logout)
 );
