@@ -1,7 +1,7 @@
 import { createPublicKey, createVerify } from "crypto";
 import type { KeyObject } from "crypto";
-import { env } from "../config/env.js";
-import { ApiError } from "./ApiError.js";
+import { env } from "../../config/env.js";
+import { ApiError } from "../error/ApiError.js";
 
 const GOOGLE_CERTS_URL = "https://www.googleapis.com/oauth2/v3/certs";
 const GOOGLE_ISSUERS = ["https://accounts.google.com", "accounts.google.com"];

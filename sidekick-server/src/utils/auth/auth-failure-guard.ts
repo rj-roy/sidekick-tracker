@@ -1,4 +1,4 @@
-import { logSecurityEvent } from "./security-log.js";
+import { logSecurityEvent } from "../security/security-log.js";
 
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_FAILURES = 10;

@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { AuthController } from "./auth.controller.js";
-import { asyncHandler } from "../../utils/async-handler.js";
+import { asyncHandler } from "../../utils/http/async-handler.js";
 import { createRateLimit, userAwareKey } from "../../middleware/rate-limit.middleware.js";
 import { authenticator } from "../../middleware/authenticator.js";
+import { requireCsrf } from "../../middleware/csrf.middleware.js";
 
 const router = Router();
 
@@ -65,7 +66,7 @@ router.delete(
     "/sessions/:sessionId",
     ipShield(),
     authenticator,
-    // requireCsrf,
+    requireCsrf,
     userLimit(60_000, 15),
     asyncHandler(AuthController.revokeSession)
 );
@@ -75,7 +76,7 @@ router.post(
     "/logout-all",
     ipShield(),
     authenticator,
-    // requireCsrf,
+    requireCsrf,
     userLimit(60_000, 10),
     asyncHandler(AuthController.logoutAll)
 );
@@ -85,7 +86,7 @@ router.post(
     "/logout",
     ipShield(),
     authenticator,
-    // requireCsrf,
+    requireCsrf,
     userLimit(60_000, 3),
     asyncHandler(AuthController.logout)
 );

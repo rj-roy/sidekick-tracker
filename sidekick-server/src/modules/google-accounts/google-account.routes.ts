@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { GoogleAccountController } from "./google-account.controller.js";
-import { asyncHandler } from "../../utils/async-handler.js";
+import { asyncHandler } from "../../utils/http/async-handler.js";
 import { createRateLimit, userAwareKey } from "../../middleware/rate-limit.middleware.js";
 import { authenticator } from "../../middleware/authenticator.js";
 

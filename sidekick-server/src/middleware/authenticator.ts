@@ -1,9 +1,9 @@
 import type { NextFunction, Request, Response } from "express";
 import type { ObjectId } from "mongodb";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/error/ApiError.js";
 import { SessionService } from "../modules/session/session.service.js";
 import { csrfTokenFor } from "./csrf.middleware.js";
-import { logSecurityEvent } from "../utils/security-log.js";
+import { validateIp, validateUa } from "../utils/user/verifyUserInfo.js";
 
 declare global {
     namespace Express {
@@ -16,20 +16,19 @@ declare global {
 }
 
 export const authenticator = async (req: Request, res: Response, next: NextFunction) => {
-    const sessionToken = req.get('x-session');
-    const csrfToken = req.get('x-csrf');
+    const sessionToken = req.get('x-session-token');
+    const csrfToken = req.get('x-csrf-token');
 
     if (!sessionToken || !csrfToken) {
         throw new ApiError(401, "Authentication required", "SESSION_INVALID");
     };
 
-    const userAgent = req.get("user-agent") || "unknown";
-    const ipAddress = req.ip || "unknown";
+    const { userAgent } = validateUa(req.get("x-client-ua") || req.get("user-agent"));
+    const { clientIp } = validateIp(req.get("x-client-ip") || req.get("x-forwarded-for") || req.ip);
 
-    const result = await SessionService.validateSession(sessionToken, { userAgent, ipAddress });
+    const result = await SessionService.validateSession(sessionToken, { userAgent, clientIp });
 
     if (result.rotatedToken && result.rotatedSessionId) {
-        logSecurityEvent("SESSION_BEARER_UNTRUSTED_ORIGIN", { path: req.path });
         res.setHeader("x-r-csrf-token", csrfTokenFor(result.rotatedSessionId));
         res.setHeader("x-r-session-token", result.rotatedToken);
     };

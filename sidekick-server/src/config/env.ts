@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/error/ApiError.js";
 
 const getRequiredEnv = (key: string): string => {
   const value = process.env[key];

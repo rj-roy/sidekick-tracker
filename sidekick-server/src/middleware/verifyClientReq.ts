@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import type { Request, Response, NextFunction } from "express";
 import { env } from "../config/env.js";
-import { deny } from "../utils/denyReq.js";
+import { deny } from "../utils/http/denyReq.js";
 
 declare module "http" {
     interface IncomingMessage { rawBody?: Buffer }

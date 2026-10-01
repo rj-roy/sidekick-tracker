@@ -1,6 +1,6 @@
 import crypto from "crypto";
-import { env } from "../config/env.js";
-import { ApiError } from "./ApiError.js";
+import { env } from "../../config/env.js";
+import { ApiError } from "../error/ApiError.js";
 
 const ALGORITHM = "aes-256-gcm";
 

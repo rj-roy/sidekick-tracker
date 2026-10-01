@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
 import { timingSafeEqual } from "crypto";
 import { ObjectId } from "mongodb";
-import { ApiResponse } from "../../utils/ApiRsponse.js";
-import { ApiError } from "../../utils/ApiError.js";
+import { ApiResponse } from "../../utils/http/ApiRsponse.js";
+import { ApiError } from "../../utils/error/ApiError.js";
 import { AuthService } from "./auth.service.js";
 import { validateLoginCallback } from "./auth.validation.js";
 import { env } from "../../config/env.js";
@@ -10,16 +10,17 @@ import { GoogleAccountRepository } from "../google-accounts/index.js";
 import { SessionService } from "../session/session.service.js";
 import { AuthRepository } from "./auth.repository.js";
 import { csrfTokenFor } from "../../middleware/csrf.middleware.js";
-import { cookieOptions, clearCookieOptions } from "../../utils/cookies.js";
-import { generatePkcePair, generateNonce } from "../../utils/pkce.js";
-import { logSecurityEvent } from "../../utils/security-log.js";
-import { AuthFailureGuard } from "../../utils/auth-failure-guard.js";
-import { decrypt, encrypt } from "../../utils/crypto.js";
+import { cookieOptions, clearCookieOptions } from "../../utils/http/cookies.js";
+import { generatePkcePair, generateNonce } from "../../utils/auth/pkce.js";
+import { logSecurityEvent } from "../../utils/security/security-log.js";
+import { AuthFailureGuard } from "../../utils/auth/auth-failure-guard.js";
+import { decrypt, encrypt } from "../../utils/security/crypto.js";
+import { validateIp, validateUa } from "../../utils/user/verifyUserInfo.js";
 
 // under review
 export const AuthController = {
     //reviewed
-    googleAuthRedirect(req: Request, res: Response) {
+    googleAuthRedirect(_req: Request, res: Response) {
         const initialState = crypto.randomUUID();
         const { codeVerifier, codeChallenge } = generatePkcePair();
         const nonce = generateNonce();
@@ -39,7 +40,8 @@ export const AuthController = {
 
     //reviewed
     async handleGoogleCallback(req: Request, res: Response) {
-        const clientIp = req.ip || "unknown";
+        const { clientIp } = validateIp(req.get("x-client-ip") || req.get("x-forwarded-for"));
+        const { userAgent } = validateUa(req.get('x-client-ua') || req.get("user-agent"));
 
         if (AuthFailureGuard.isLockedOut(clientIp)) {
             throw new ApiError(429, "Too many failed sign-in attempts", "AUTH_LOCKED_OUT");
@@ -121,10 +123,8 @@ export const AuthController = {
             };
 
             if (tokens) {
-                const userAgent = req.get('user-agent') || "unknown";
-                const ip = req.ip || "unknown";
 
-                const { token, sessionId } = await SessionService.createSession(user._id, userAgent, ip);
+                const { token, sessionId } = await SessionService.createSession(user._id, userAgent, clientIp);
 
                 if (token && sessionId) {
                     logSecurityEvent("OAUTH_LOGIN_SUCCESS", { userId: user._id.toHexString(), sessionId });
@@ -147,24 +147,22 @@ export const AuthController = {
 
     //reviewed
     async getSession(req: Request, res: Response) {
-        // console.log(req.headers);
-        // if (!req.userId) {
-        //     throw new ApiError(401, "Authentication required");
-        // };
+        if (!req.userId) {
+            throw new ApiError(401, "Authentication required");
+        };
 
-        // const user = await AuthRepository.findById(req.userId);
-        // if (!user) {
-        //     throw new ApiError(404, "User not found");
-        // }
+        const user = await AuthRepository.findById(req.userId);
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        };
 
         return ApiResponse.success(res, "Success", {
             user: {
-                id: "user._id",
-                email: "user.email",
-                name: "user.name",
-                picture: "user.picture",
+                id: user._id,
+                email: user.email,
+                name: user.name,
+                picture: user.picture,
             },
-            csrfToken: req.sessionId ? "csrfTokenFor(req.sessionId)" : undefined,
         });
     },
 
