@@ -1,9 +1,9 @@
 import type { Request, Response } from "express";
-import { ApiResponse } from "../../utils/ApiRsponse.js";
-import { ApiError } from "../../utils/ApiError.js";
+import { ApiResponse } from "../../utils/http/ApiRsponse.js";
+import { ApiError } from "../../utils/error/ApiError.js";
 import { GoogleAccountRepository } from "./google-account.repository.js";
 import { GoogleOAuthService } from "./google-oauth.service.js";
-import { logSecurityEvent } from "../../utils/security-log.js";
+import { logSecurityEvent } from "../../utils/security/security-log.js";
 
 export const GoogleAccountController = {
     async getAccount(req: Request, res: Response) {

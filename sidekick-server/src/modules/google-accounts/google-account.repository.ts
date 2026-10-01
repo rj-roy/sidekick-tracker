@@ -1,11 +1,11 @@
 import type { ObjectId, Document } from "mongodb";
 import { env } from "../../config/env.js";
-import { encrypt, decrypt } from "../../utils/crypto.js";
+import { encrypt, decrypt } from "../../utils/security/crypto.js";
 import type { GoogleAccountTokens } from "./google-account.types.js";
 import { ensureDB } from "../../database/mongodb.js";
-import { ApiError } from "../../utils/ApiError.js";
+import { ApiError } from "../../utils/error/ApiError.js";
 import { StoredGoogleTokens } from "../auth/auth.types.js";
-import { normalizeEmail } from "../../utils/normalize-email.js";
+import { normalizeEmail } from "../../utils/others/normalize-email.js";
 
 const collection = async () => {
   const db = await ensureDB();

@@ -1,9 +1,9 @@
-import { ApiError } from "../../utils/ApiError.js";
+import { ApiError } from "../../utils/error/ApiError.js";
 import { env } from "../../config/env.js";
 import { AuthRepository } from "./auth.repository.js";
 import { GoogleTokenResponse, GoogleUserInfo } from "./auth.types.js";
-import { verifyGoogleIdToken } from "../../utils/google-jwt.js";
-import { normalizeEmail } from "../../utils/normalize-email.js";
+import { verifyGoogleIdToken } from "../../utils/auth/google-jwt.js";
+import { normalizeEmail } from "../../utils/others/normalize-email.js";
 
 // reviewed
 const upsertOrThrow = async (userData: {
