@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
 import { timingSafeEqual } from "crypto";
 import { ObjectId } from "mongodb";
-import { ApiResponse } from "../../utils/ApiRsponse.js";
-import { ApiError } from "../../utils/ApiError.js";
+import { ApiResponse } from "../../utils/http/ApiRsponse.js";
+import { ApiError } from "../../utils/error/ApiError.js";
 import { AuthService } from "./auth.service.js";
 import { validateLoginCallback } from "./auth.validation.js";
 import { env } from "../../config/env.js";
@@ -10,57 +10,46 @@ import { GoogleAccountRepository } from "../google-accounts/index.js";
 import { SessionService } from "../session/session.service.js";
 import { AuthRepository } from "./auth.repository.js";
 import { csrfTokenFor } from "../../middleware/csrf.middleware.js";
-import { cookieOptions, clearCookieOptions } from "../../utils/cookies.js";
-import { generatePkcePair, generateNonce } from "../../utils/pkce.js";
-import { logSecurityEvent } from "../../utils/security-log.js";
-import { AuthFailureGuard } from "../../utils/auth-failure-guard.js";
+import { cookieOptions, clearCookieOptions } from "../../utils/http/cookies.js";
+import { generatePkcePair, generateNonce } from "../../utils/auth/pkce.js";
+import { logSecurityEvent } from "../../utils/security/security-log.js";
+import { AuthFailureGuard } from "../../utils/auth/auth-failure-guard.js";
+import { decrypt, encrypt } from "../../utils/security/crypto.js";
+import { validateIp, validateUa } from "../../utils/user/verifyUserInfo.js";
 
 // under review
 export const AuthController = {
     //reviewed
-    googleAuthRedirect(req: Request, res: Response) {
-        const state = crypto.randomUUID();
+    googleAuthRedirect(_req: Request, res: Response) {
+        const initialState = crypto.randomUUID();
         const { codeVerifier, codeChallenge } = generatePkcePair();
         const nonce = generateNonce();
-        const url = AuthService.getGoogleAuthUrl({ state, codeChallenge, nonce });
+        const paramsState = encrypt(initialState, true);
+        const cookieState = encrypt(initialState);
 
-        const cookieMaxAge = 10 * 60 * 1000;
+        const url = AuthService.getGoogleAuthUrl({ state: paramsState, codeChallenge, nonce });
+        const verifierState = encrypt(JSON.stringify({ v: codeVerifier, n: nonce }));
 
-        res.cookie(env.cookies.oauthState, state, {
-            httpOnly: true,
-            secure: env.cookies.secure,
-            sameSite: "lax",
-            path: "/",
-            maxAge: cookieMaxAge,
+        ApiResponse.success(res, "Authentication URL", {
+            url, states: {
+                _ms__i: cookieState,
+                o_bh_h: verifierState,
+            },
         });
-
-        res.cookie(env.cookies.oauthVerifier, JSON.stringify({ v: codeVerifier, n: nonce }), {
-            httpOnly: true,
-            secure: env.cookies.secure,
-            sameSite: "lax",
-            path: "/",
-            maxAge: cookieMaxAge,
-        });
-
-        res.redirect(url);
     },
 
     //reviewed
     async handleGoogleCallback(req: Request, res: Response) {
-        const clearOAuthCookies = (): void => {
-            res.clearCookie(env.cookies.oauthState, clearCookieOptions());
-            res.clearCookie(env.cookies.oauthVerifier, clearCookieOptions());
-        };
-
-        const clientIp = req.ip || "unknown";
+        const { clientIp } = validateIp(req.get("x-client-ip") || req.get("x-forwarded-for"));
+        const { userAgent } = validateUa(req.get('x-client-ua') || req.get("user-agent"));
 
         if (AuthFailureGuard.isLockedOut(clientIp)) {
             throw new ApiError(429, "Too many failed sign-in attempts", "AUTH_LOCKED_OUT");
         };
 
         try {
-            const { code, state } = validateLoginCallback(req.query);
-            const savedState = req.cookies?.[env.cookies.oauthState];
+            const { code, state, cookieState, verifierCookieState } = validateLoginCallback(req.body);
+            const savedState = decrypt(cookieState as string);
 
             const stateMatches =
                 typeof savedState === "string"
@@ -76,7 +65,7 @@ export const AuthController = {
             let nonce = "";
 
             try {
-                const pkceRaw = req.cookies?.[env.cookies.oauthVerifier];
+                const pkceRaw = decrypt(verifierCookieState as string);
                 if (typeof pkceRaw === "string" && pkceRaw) {
                     const parsed = JSON.parse(pkceRaw) as { v?: string; n?: string };
                     verifier = typeof parsed.v === "string" ? parsed.v : "";
@@ -123,7 +112,7 @@ export const AuthController = {
 
             const data: {
                 user: { id: string; email: string; name: string; picture?: string };
-                csrfToken?: string;
+                sessionCookies?: { OG_L: string, T_ls_: string, };
             } = {
                 user: {
                     id: user._id.toHexString(),
@@ -134,25 +123,20 @@ export const AuthController = {
             };
 
             if (tokens) {
-                const userAgent = req.get('user-agent') || "unknown";
-                const ip = req.ip || "unknown";
 
-                const { token, sessionId } = await SessionService.createSession(user._id, userAgent, ip);
+                const { token, sessionId } = await SessionService.createSession(user._id, userAgent, clientIp);
 
                 if (token && sessionId) {
                     logSecurityEvent("OAUTH_LOGIN_SUCCESS", { userId: user._id.toHexString(), sessionId });
-
-                    res.cookie(env.cookies.raw, token, cookieOptions(env.session.expiresInSeconds * 1000));
-
-                    data.csrfToken = csrfTokenFor(sessionId);
+                    data.sessionCookies = {
+                        OG_L: token,
+                        T_ls_: csrfTokenFor(sessionId),
+                    };
                 };
             };
 
-            clearOAuthCookies();
             return ApiResponse.success(res, "Login Succeed", data);
         } catch (err) {
-            clearOAuthCookies();
-
             if (err instanceof ApiError && err.code) {
                 AuthFailureGuard.recordFailure(clientIp, err.code);
             };
@@ -162,7 +146,7 @@ export const AuthController = {
     },
 
     //reviewed
-    async getMe(req: Request, res: Response) {
+    async getSession(req: Request, res: Response) {
         if (!req.userId) {
             throw new ApiError(401, "Authentication required");
         };
@@ -170,7 +154,7 @@ export const AuthController = {
         const user = await AuthRepository.findById(req.userId);
         if (!user) {
             throw new ApiError(404, "User not found");
-        }
+        };
 
         return ApiResponse.success(res, "Success", {
             user: {
@@ -179,7 +163,6 @@ export const AuthController = {
                 name: user.name,
                 picture: user.picture,
             },
-            csrfToken: req.sessionId ? csrfTokenFor(req.sessionId) : undefined,
         });
     },
 

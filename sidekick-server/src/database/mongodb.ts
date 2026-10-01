@@ -1,6 +1,6 @@
 import { MongoClient, type Db } from "mongodb";
 import { env } from "../config/env.js";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/error/ApiError.js";
 
 let client: MongoClient | null = null;
 let db: Db | null = null;

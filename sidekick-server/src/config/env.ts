@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/error/ApiError.js";
 
 const getRequiredEnv = (key: string): string => {
   const value = process.env[key];
@@ -156,6 +156,7 @@ export const env = {
       emailOpens: getRequiredEnv("OPEN_EMAIL_COLL"),
       googleAccounts: getRequiredEnv("GOOGLE_ACCOUNTS_COLLECTION"),
       sessions: getRequiredEnv("SESSIONS_COLLECTION"),
+      rExCollection: getRequiredEnv("REGISTERED_EXTENSION")
     },
   },
 
@@ -183,6 +184,7 @@ export const env = {
   session: {
     secret: sessionSecret,
     tokenEncryptionKey: tokenEncryptionKey,
+    secTokenEncryptionKey: getRequiredEnv("SEC_TOKEN_ENCRYPTION_KEY"),
     expiresInSeconds: sessionExpiresInSeconds,
     rotationIntervalSeconds,
     rotationGraceSeconds,
@@ -202,5 +204,8 @@ export const env = {
 
   rateLimit: {
     redisUrl: rateLimitRedisUrl,
+  },
+  crypto: {
+    signedHamcSecrete: getRequiredEnv("SIGNED_HMAC_SECRET"),
   },
 } as const;

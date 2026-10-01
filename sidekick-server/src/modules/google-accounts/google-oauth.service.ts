@@ -1,10 +1,10 @@
 import { ObjectId } from "mongodb";
-import { ApiError } from "../../utils/ApiError.js";
+import { ApiError } from "../../utils/error/ApiError.js";
 import { env } from "../../config/env.js";
-import { decrypt } from "../../utils/crypto.js";
+import { decrypt } from "../../utils/security/crypto.js";
 import { GoogleAccountRepository } from "./google-account.repository.js";
 import { GoogleTokenResponse, StoredGoogleTokens } from "../auth/auth.types.js";
-import { logSecurityEvent } from "../../utils/security-log.js";
+import { logSecurityEvent } from "../../utils/security/security-log.js";
 
 export const GoogleOAuthService = {
     //reviewed

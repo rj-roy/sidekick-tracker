@@ -1,9 +1,9 @@
 import { MongoServerError } from "mongodb";
 import type { ObjectId } from "mongodb";
 import { env } from "../../config/env.js";
-import { ApiError } from "../../utils/ApiError.js";
+import { ApiError } from "../../utils/error/ApiError.js";
 import { ensureDB } from "../../database/mongodb.js";
-import { normalizeEmail } from "../../utils/normalize-email.js";
+import { normalizeEmail } from "../../utils/others/normalize-email.js";
 
 const collection = async () => {
     const db = await ensureDB();

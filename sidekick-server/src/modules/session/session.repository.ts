@@ -2,7 +2,7 @@ import { MongoServerError, ObjectId, WithId } from "mongodb";
 import { env } from "../../config/env.js";
 import { ensureDB } from "../../database/mongodb.js"
 import { SessionDoc } from "./session.types.js";
-import { ApiError } from "../../utils/ApiError.js";
+import { ApiError } from "../../utils/error/ApiError.js";
 
 const collection = async () => {
     const db = await ensureDB();

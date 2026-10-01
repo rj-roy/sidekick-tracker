@@ -1,5 +1,5 @@
 import type { ObjectId } from "mongodb";
-import { ApiError } from "../../utils/ApiError.js";
+import { ApiError } from "../../utils/error/ApiError.js";
 import { env } from "../../config/env.js";
 import { GoogleOAuthService } from "../google-accounts/google-oauth.service.js";
 import type { GmailMessage, GmailMessageList, GmailProfile } from "./gmail.types.js";
