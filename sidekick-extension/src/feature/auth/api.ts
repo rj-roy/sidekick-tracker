@@ -10,7 +10,7 @@ export const AuthApi = {
 
     async getSession(): Promise<SessionRes | null> {
         try {
-            return await apiClient.get<SessionRes | null>("/auth/get/session");
+            return await apiClient.get<SessionRes | null>("/api/auth/session/get");
         } catch (error) {
             if (error instanceof apiClientError) {
                 if (error.status === 401) {

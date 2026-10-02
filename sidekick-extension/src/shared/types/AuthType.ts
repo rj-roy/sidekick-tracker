@@ -4,7 +4,8 @@ export interface SessionRes {
 };
 
 export type SessionState = |
-{ status: "authenticated"; user: User; session: Session; } |
+{ status: "loading" } |
+{ status: "authenticated"; user: User } |
 { status: "unauthenticated"; };
 
 export interface User {

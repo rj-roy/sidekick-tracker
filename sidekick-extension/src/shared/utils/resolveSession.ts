@@ -12,7 +12,6 @@ export async function resolveSession(): Promise<SessionState> {
         return {
             status: "authenticated",
             user: session.user,
-            session: session.session,
         };
 
     } catch (error) {
