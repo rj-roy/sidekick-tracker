@@ -224,12 +224,10 @@ export const SessionService = {
         return { session, rotatedToken: rotated.token, rotatedSessionId: rotated.sessionId };
     },
 
-    //reviewed
     async revokeSession(token: string, revokeReason: string): Promise<void> {
         await SessionRepository.revokeSession(hash(token), revokeReason);
     },
 
-    //reviewed
     async revokeAllForUser(userId: ObjectId, revokeReason: string): Promise<number> {
         const count = await SessionRepository.revokeAllForUser(userId, revokeReason);
 
@@ -240,12 +238,6 @@ export const SessionService = {
         return count;
     },
 
-    //reviewed
-    async sessionList(userId: ObjectId): Promise<WithId<SessionDoc>[]> {
-        return SessionRepository.findByUserId(userId);
-    },
-
-    //reviewed
     async revokeSessionById(
         userId: ObjectId,
         sessionId: ObjectId,

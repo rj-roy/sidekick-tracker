@@ -3,7 +3,6 @@ import { env } from "./config/env.js";
 import { errorHandler, notFound } from "./middleware/error.middleware.js";
 
 import { authRouter } from "./modules/auth/index.js";
-import { googleAccountsRouter } from "./modules/google-accounts/index.js";
 import cookieParser from "cookie-parser";
 import { verifyClientReq } from "./middleware/verifyClientReq.js";
 
@@ -76,7 +75,6 @@ app.get("/api/health", async (_req, res) => {
 });
 
 app.use('/auth', authRouter);
-app.use('/google-accounts', googleAccountsRouter);
 
 app.use(notFound);
 app.use(errorHandler);

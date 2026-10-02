@@ -6,20 +6,18 @@ import { ApiError } from "../../utils/error/ApiError.js";
 import { AuthService } from "./auth.service.js";
 import { validateLoginCallback } from "./auth.validation.js";
 import { env } from "../../config/env.js";
-import { GoogleAccountRepository } from "../google-accounts/index.js";
 import { SessionService } from "../session/session.service.js";
-import { AuthRepository } from "./auth.repository.js";
 import { csrfTokenFor } from "../../middleware/csrf.middleware.js";
-import { cookieOptions, clearCookieOptions } from "../../utils/http/cookies.js";
+import { clearCookieOptions } from "../../utils/http/cookies.js";
 import { generatePkcePair, generateNonce } from "../../utils/auth/pkce.js";
 import { logSecurityEvent } from "../../utils/security/security-log.js";
 import { AuthFailureGuard } from "../../utils/auth/auth-failure-guard.js";
 import { decrypt, encrypt } from "../../utils/security/crypto.js";
 import { validateIp, validateUa } from "../../utils/user/verifyUserInfo.js";
+import { GoogleAccountRepository } from "../google-accounts/google-account.repository.js";
+import { UserRepository } from "../user/user.repository.js";
 
-// under review
 export const AuthController = {
-    //reviewed
     googleAuthRedirect(_req: Request, res: Response) {
         const initialState = crypto.randomUUID();
         const { codeVerifier, codeChallenge } = generatePkcePair();
@@ -38,7 +36,6 @@ export const AuthController = {
         });
     },
 
-    //reviewed
     async handleGoogleCallback(req: Request, res: Response) {
         const { clientIp } = validateIp(req.get("x-client-ip") || req.get("x-forwarded-for"));
         const { userAgent } = validateUa(req.get('x-client-ua') || req.get("user-agent"));
@@ -145,13 +142,12 @@ export const AuthController = {
         }
     },
 
-    //reviewed
     async getSession(req: Request, res: Response) {
         if (!req.userId) {
             throw new ApiError(401, "Authentication required");
         };
 
-        const user = await AuthRepository.findById(req.userId);
+        const user = await UserRepository.findById(req.userId);
         if (!user) {
             throw new ApiError(404, "User not found");
         };
@@ -166,43 +162,6 @@ export const AuthController = {
         });
     },
 
-    //reviewed
-    async getCsrfToken(req: Request, res: Response) {
-        if (!req.sessionId) {
-            throw new ApiError(401, "Authentication required");
-        }
-
-        return ApiResponse.success(res, "Success", {
-            csrfToken: csrfTokenFor(req.sessionId),
-        });
-    },
-
-    //reviewed
-    async sessionList(req: Request, res: Response) {
-        if (!req.userId) {
-            throw new ApiError(401, "Authentication required");
-        }
-
-        const sessions = await SessionService.sessionList(req.userId);
-
-        const activeSessions = sessions.filter((s) => !s.rotatedToHash);
-
-        const data = activeSessions.map((s) => ({
-            id: s._id.toHexString(),
-            userAgent: s.userAgent,
-            ipAddress: s.ipAddress,
-            createdAt: s.createdAt.toISOString(),
-            lastSeenAt: s.lastSeenAt.toISOString(),
-            expiresAt: s.expiresAt.toISOString(),
-            isCurrent: req.sessionId === s._id.toHexString(),
-            isExpired: s.expiresAt.getTime() <= Date.now(),
-            isRevoked: !!s.revokedAt,
-        }));
-
-        return ApiResponse.success(res, "Success", { sessions: data });
-    },
-
-    //reviewed, status: ok
     async revokeSession(req: Request, res: Response) {
         if (!req.userId) {
             throw new ApiError(401, "Authentication required");
@@ -232,7 +191,6 @@ export const AuthController = {
         return ApiResponse.success(res, "Session revoked");
     },
 
-    //reviewed
     async logoutAll(req: Request, res: Response) {
         if (!req.userId) {
             throw new ApiError(401, "Authentication required");
@@ -245,7 +203,6 @@ export const AuthController = {
         return ApiResponse.success(res, "All sessions cleared");
     },
 
-    //reviewed
     async logout(req: Request, res: Response) {
         if (req.sessionToken) {
             await SessionService.revokeSession(req.sessionToken, "logout");
@@ -255,4 +212,30 @@ export const AuthController = {
 
         return ApiResponse.success(res, "Logged out");
     },
+
+    // async sessionList(req: Request, res: Response) {
+    //     if (!req.userId) {
+    //         throw new ApiError(401, "Authentication required");
+    //     }
+
+    //     const sessions = await SessionService.sessionList(req.userId);
+
+    //     const activeSessions = sessions.filter((s) => !s.rotatedToHash);
+
+    //     const data = activeSessions.map((s) => ({
+    //         id: s._id.toHexString(),
+    //         userAgent: s.userAgent,
+    //         ipAddress: s.ipAddress,
+    //         createdAt: s.createdAt.toISOString(),
+    //         lastSeenAt: s.lastSeenAt.toISOString(),
+    //         expiresAt: s.expiresAt.toISOString(),
+    //         isCurrent: req.sessionId === s._id.toHexString(),
+    //         isExpired: s.expiresAt.getTime() <= Date.now(),
+    //         isRevoked: !!s.revokedAt,
+    //     }));
+
+    //     return ApiResponse.success(res, "Success", { sessions: data });
+    // },
+
+    //reviewed, status: ok
 };

@@ -1,4 +1,4 @@
-import { signedFetch } from "@/lib/auth/signedFetch";
+import { signedFetch } from "@/lib/server/signedFetch";
 import { deleteCookie, getCookie, setCookie } from "@/lib/cookies";
 import { NextResponse } from "next/server";
 
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
             },
         });
 
-    console.log(res, 'resll');
+        console.log(res);
 
     for (const name of cookieNames) {
         await deleteCookie(name);

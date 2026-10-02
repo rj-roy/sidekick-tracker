@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../constants/api";
+import { API_BASE_URL } from "../constants/uapi";
 import type { ApiRes } from "../types/ApiTypes";
 import { apiClientError } from "./apiClientError";
 

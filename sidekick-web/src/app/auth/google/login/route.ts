@@ -1,4 +1,4 @@
-import { signedFetch } from "@/lib/auth/signedFetch";
+import { signedFetch } from "@/lib/server/signedFetch";
 import { setCookie } from "@/lib/cookies";
 import { AuthRes } from "@/types/authTypes";
 import { NextResponse } from "next/server";

@@ -2,7 +2,7 @@ import { env } from "./config/env.js";
 import { app } from "./app.js";
 import { connectDB, disconnectDB } from "./database/mongodb.js";
 import { initializeIndexes } from "./database/init.indexs.js";
-import { startJobs } from "./jobs/index.js";
+// import { startJobs } from "./jobs/index.js";
 
 const port = env.port;
 
@@ -12,7 +12,7 @@ if (env.nodeEnv !== "test") {
   const start = async (): Promise<void> => {
     await connectDB();
     await initializeIndexes();
-    startJobs();
+    // startJobs();
 
     server = app.listen(port, () => {
       console.log(`SideKick server listening on ${port}`);

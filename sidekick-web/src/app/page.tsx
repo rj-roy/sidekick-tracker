@@ -1,10 +1,14 @@
-import { auth } from "@/lib/auth/auth";
+'use client'
+import { useSession } from "@/lib/auth/client";
 import Image from "next/image";
 
-export default async function Home() {
+export default function Home() {
 
-  const session = await auth();
-  console.log(session,' from page.tsx');
+  const { data, isPending } = useSession();
+  console.log(data);
+
+  // const session = await auth();
+  // console.log(session,' from page.tsx');
 
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
