@@ -1,92 +1,46 @@
 "use client";
-import { SessionState } from "@/types/authTypes";
 import { useSyncExternalStore } from "react";
+import type { SessionState } from "@/types/authTypes";
 
-let state: SessionState = {
-    data: null,
-    isPending: true,
-};
+const PENDING: SessionState = { data: null, isPending: true };
 
-let initialized = false;
-let promise: Promise<void> | null = null;
-
+let state: SessionState = PENDING;
+let started = false;
 const listeners = new Set<() => void>();
 
-function emit() {
-    listeners.forEach((listener) => listener());
-}
+function set(next: SessionState) {
+  state = next;
+  listeners.forEach((l) => l());
+};
+
+async function load() {
+  try {
+    const res = await fetch("/api/auth/get/session", {
+      credentials: "include",
+      cache: "no-store",
+    });
+    const json = res.ok ? await res.json() : null;
+    set({ data: json?.success ? json.data : null, isPending: false });
+  } catch {
+    set({ data: null, isPending: false });
+  };
+};
 
 function subscribe(listener: () => void) {
-    listeners.add(listener);
-
-    return () => {
-        listeners.delete(listener);
-    };
-}
-
-function getSnapshot() {
-    return state;
-}
-
-function getServerSnapshot() {
-    return {
-        data: null,
-        isPending: true,
-    };
-}
-
-async function fetchSession() {
-    if (promise) {
-        return promise;
-    };
-
-    promise = fetch("api/auth/get/session", {
-        method: "GET",
-        credentials: "include",
-
-    }).then(async (res) => {
-        if (!res.ok) {
-            state = { data: null, isPending: false, };
-            return;
-        };
-
-        const data = await res.json();
-        state = { data: data.success ? data : null, isPending: false, };
-
-    }).catch(() => {
-        state = { data: null, isPending: false, };
-
-    }).finally(() => {
-        promise = null;
-        emit();
-    });
-
-    return promise;
+  listeners.add(listener);
+  if (!started) {
+    started = true;
+    void load();
+  };
+  return () => {
+    listeners.delete(listener);
+  };
 };
 
-function initialize() {
-    if (initialized) return;
+export const useSession = () =>
+  useSyncExternalStore(subscribe, () => state, () => PENDING);
 
-    initialized = true;
-    void fetchSession();
-};
-
-export const client = {
-    useSession() {
-        initialize();
-
-        const snapshot = useSyncExternalStore(
-            subscribe,
-            getSnapshot,
-            getServerSnapshot,
-        );
-
-        return snapshot;
-    },
-
-    async refreshSession() {
-        state = { ...state, isPending: true, };
-        emit();
-        await fetchSession();
-    },
+export async function refreshSession() {
+  set({ ...state, isPending: true }); 
+  await load();
 };

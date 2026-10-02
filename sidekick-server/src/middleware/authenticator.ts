@@ -4,6 +4,7 @@ import { ApiError } from "../utils/error/ApiError.js";
 import { SessionService } from "../modules/session/session.service.js";
 import { csrfTokenFor } from "./csrf.middleware.js";
 import { validateIp, validateUa } from "../utils/user/verifyUserInfo.js";
+import { GoogleOAuthService } from "../modules/google-accounts/google-oauth.service.js";
 
 declare global {
     namespace Express {
@@ -36,6 +37,8 @@ export const authenticator = async (req: Request, res: Response, next: NextFunct
     req.userId = result.session.userId;
     req.sessionId = result.rotatedSessionId ?? result.session._id.toHexString();
     req.sessionToken = result.rotatedToken ?? sessionToken;
+
+    await GoogleOAuthService.validateGoogleAC(req);
 
     next();
 };

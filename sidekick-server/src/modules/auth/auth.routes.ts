@@ -12,28 +12,17 @@ const ipShield = () => createRateLimit({ windowMs: 60_000, limit: 300 });
 const userLimit = (windowMs: number, limit: number) =>
     createRateLimit({ windowMs, limit, keyGenerator: userAwareKey });
 
-//reviewed
 router.get(
     "/google/login",
     createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
     AuthController.googleAuthRedirect
 );
 
-//reviewed
 router.post(
     "/google/callback",
     createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
     asyncHandler(AuthController.handleGoogleCallback)
 );
-
-//reviewed
-// router.get(
-//     "/me",
-//     ipShield(),
-//     authenticator,
-//     userLimit(60_000, 60),
-//     asyncHandler(AuthController.getMe)
-// );
 
 router.get(
     "/get/session",
@@ -43,23 +32,6 @@ router.get(
     asyncHandler(AuthController.getSession)
 );
 
-//reviewed only server-side
-router.get(
-    "/csrf",
-    ipShield(),
-    authenticator,
-    userLimit(60_000, 30),
-    asyncHandler(AuthController.getCsrfToken)
-);
-
-//reviewed
-router.get(
-    "/sessions",
-    ipShield(),
-    authenticator,
-    userLimit(60_000, 30),
-    asyncHandler(AuthController.sessionList)
-);
 
 //reviewed, todo: this is not "delete" its "update"
 router.delete(

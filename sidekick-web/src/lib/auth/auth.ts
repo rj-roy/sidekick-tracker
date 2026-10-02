@@ -1,4 +1,4 @@
-import { signedFetch } from "./signedFetch"
+import { signedFetch } from "../server/signedFetch"
 
 export const auth = async () => {
     const res = await signedFetch('/auth/get/session');
