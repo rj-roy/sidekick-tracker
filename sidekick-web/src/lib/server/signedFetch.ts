@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { statusHandler } from "../statusHandler";
 import { ApiResponse } from "@/types/apiTypes";
 import { getCookie, setCookie } from "../cookies";
+import { getClientInfo } from "./clientInfo";
 
 type Opts = { method?: string; body?: unknown; headers?: Record<string, string> };
 
@@ -13,6 +14,7 @@ export async function signedFetch<T>(path: string, opts: Opts = {}): Promise<Api
   const body = opts.body === undefined ? "" : JSON.stringify(opts.body);
   const ts = Date.now().toString();
   const nonce = crypto.randomBytes(16).toString("hex");
+  const { ip, ua } = await getClientInfo();
 
   const canonical = [method, path, ts, nonce, sha256(body)].join("\n");
   const sig = crypto
@@ -30,8 +32,10 @@ export async function signedFetch<T>(path: string, opts: Opts = {}): Promise<Api
       "x-ts": ts,
       "x-nonce": nonce,
       "x-sig": sig,
-      ...(session ? { "x-session": session } : {}),
-      ...(csrf ? { "x-csrf": csrf } : {}),
+      "x-client-ua": ua,
+      "x-client-ip": ip,
+      ...(session ? { "x-session-token": session } : {}),
+      ...(csrf ? { "x-csrf-token": csrf } : {}),
       ...opts.headers,
     },
     body: body || undefined,

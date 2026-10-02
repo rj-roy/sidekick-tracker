@@ -4,7 +4,6 @@ import { decrypt } from "../../utils/security/crypto.js";
 const MAX_CODE_LENGTH = 4096;
 const MAX_STATE_LENGTH = 256;
 
-// reviewed
 export const validateLoginCallback = (body: Record<string, unknown>) => {
     const { paramsCode, paramsState, _ms__i, o_bh_h } = body;
 
