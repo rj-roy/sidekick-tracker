@@ -1,11 +1,10 @@
-import { ApiError } from "../../utils/ApiError.js";
+import { ApiError } from "../../utils/error/ApiError.js";
 import { env } from "../../config/env.js";
-import { AuthRepository } from "./auth.repository.js";
 import { GoogleTokenResponse, GoogleUserInfo } from "./auth.types.js";
-import { verifyGoogleIdToken } from "../../utils/google-jwt.js";
-import { normalizeEmail } from "../../utils/normalize-email.js";
+import { verifyGoogleIdToken } from "../../utils/auth/google-jwt.js";
+import { normalizeEmail } from "../../utils/others/normalize-email.js";
+import { UserRepository } from "../user/user.repository.js";
 
-// reviewed
 const upsertOrThrow = async (userData: {
     googleId: string;
     email: string;
@@ -13,7 +12,7 @@ const upsertOrThrow = async (userData: {
     picture?: string;
     emailVerified?: boolean;
 }) => {
-    const user = await AuthRepository.upsert(userData);
+    const user = await UserRepository.upsert(userData);
 
     if (!user) {
         throw new ApiError(500, "Failed to create or update user");
@@ -22,8 +21,63 @@ const upsertOrThrow = async (userData: {
     return user;
 };
 
+const getUserInfo = async (accessToken: string): Promise<GoogleUserInfo> => {
+    const response = await fetch(env.google.userInfoUrl, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (response.status === 401 || response.status === 403) {
+        throw new ApiError(401, "Google authorization failed");
+    }
+
+    if (!response.ok) {
+        throw new ApiError(502, "Google upstream error");
+    }
+
+    const data: unknown = await response.json();
+
+    if (!data || typeof data !== "object" || typeof (data as GoogleUserInfo).email !== "string") {
+        throw new ApiError(502, "Malformed response from Google");
+    }
+
+    return data as GoogleUserInfo;
+};
+
+const exchangeCodeForTokens = async (code: string, codeVerifier: string): Promise<GoogleTokenResponse> => {
+    const response = await fetch(env.google.tokenUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            code,
+            code_verifier: codeVerifier,
+            client_id: env.google.clientId,
+            client_secret: env.google.clientSecret,
+            redirect_uri: env.google.redirectUrl,
+            grant_type: "authorization_code",
+        }),
+    });
+
+    if (response.status === 401 || response.status === 403) {
+        throw new ApiError(401, "Google authorization failed");
+    };
+
+    if (!response.ok) {
+        throw new ApiError(502, "Google upstream error");
+    };
+
+    const tokens: unknown = await response.json();
+
+    if (!tokens ||
+        typeof tokens !== "object" ||
+        typeof (tokens as GoogleTokenResponse).access_token !== "string"
+    ) {
+        throw new ApiError(502, "Malformed response from Google");
+    }
+
+    return tokens as GoogleTokenResponse;
+};
+
 export const AuthService = {
-    //reviewed
     getGoogleAuthUrl(options: { state: string; codeChallenge: string; nonce: string; }) {
         const params = new URLSearchParams({
             client_id: env.google.clientId,
@@ -40,7 +94,6 @@ export const AuthService = {
         return `${env.google.authUrl}?${params.toString()}`
     },
 
-    //reviewed
     async getCallbackCred(code: string, codeVerifier: string, nonce: string) {
         const tokens = await exchangeCodeForTokens(code, codeVerifier);
 
@@ -89,62 +142,4 @@ export const AuthService = {
 
         return { user, tokens };
     },
-};
-
-//reviewed
-const getUserInfo = async (accessToken: string): Promise<GoogleUserInfo> => {
-    const response = await fetch(env.google.userInfoUrl, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-    });
-
-    if (response.status === 401 || response.status === 403) {
-        throw new ApiError(401, "Google authorization failed");
-    }
-
-    if (!response.ok) {
-        throw new ApiError(502, "Google upstream error");
-    }
-
-    const data: unknown = await response.json();
-
-    if (!data || typeof data !== "object" || typeof (data as GoogleUserInfo).email !== "string") {
-        throw new ApiError(502, "Malformed response from Google");
-    }
-
-    return data as GoogleUserInfo;
-};
-
-//reviewed
-const exchangeCodeForTokens = async (code: string, codeVerifier: string): Promise<GoogleTokenResponse> => {
-    const response = await fetch(env.google.tokenUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-            code,
-            code_verifier: codeVerifier,
-            client_id: env.google.clientId,
-            client_secret: env.google.clientSecret,
-            redirect_uri: env.google.redirectUrl,
-            grant_type: "authorization_code",
-        }),
-    });
-
-    if (response.status === 401 || response.status === 403) {
-        throw new ApiError(401, "Google authorization failed");
-    };
-
-    if (!response.ok) {
-        throw new ApiError(502, "Google upstream error");
-    };
-
-    const tokens: unknown = await response.json();
-
-    if (!tokens ||
-        typeof tokens !== "object" ||
-        typeof (tokens as GoogleTokenResponse).access_token !== "string"
-    ) {
-        throw new ApiError(502, "Malformed response from Google");
-    }
-
-    return tokens as GoogleTokenResponse;
 };

@@ -1,83 +1,15 @@
-import { ObjectId } from "mongodb";
-import { ApiError } from "../../utils/ApiError.js";
+import { ApiError } from "../../utils/error/ApiError.js";
 import { env } from "../../config/env.js";
-import { decrypt } from "../../utils/crypto.js";
+import { decrypt } from "../../utils/security/crypto.js";
 import { GoogleAccountRepository } from "./google-account.repository.js";
 import { GoogleTokenResponse, StoredGoogleTokens } from "../auth/auth.types.js";
-import { logSecurityEvent } from "../../utils/security-log.js";
+import { logSecurityEvent } from "../../utils/security/security-log.js";
+import { Request } from "express";
 
-export const GoogleOAuthService = {
-    //reviewed
-    async getValidAccessToken(userId: ObjectId): Promise<string> {
-        const userAccount = await GoogleAccountRepository.findByUserId(userId);
+const thresholdMs = env.google.tokenRefreshThresholdSeconds * 1000;
 
-        if (!userAccount) {
-            throw new ApiError(404, "Google account not connected");
-        };
-
-        const decryptedTokens = JSON.parse(decrypt(userAccount.encryptedTokens)) as StoredGoogleTokens;
-
-        if (typeof decryptedTokens.accessToken !== "string") {
-            throw new ApiError(401, "Missing access token");
-        };
-
-        const thresholdMs = env.google.tokenRefreshThresholdSeconds * 1000;
-
-        if (userAccount.expiresAt && userAccount.expiresAt.getTime() > Date.now() + thresholdMs) {
-            return decryptedTokens.accessToken;
-        };
-
-        if (typeof decryptedTokens.refreshToken !== "string") {
-            throw new ApiError(401, "Google authorization required");
-        };
-
-        const tokens = await refreshAccessToken(decryptedTokens.refreshToken);
-
-        await GoogleAccountRepository.updateTokens(
-            userId,
-            {
-                accessToken: tokens.access_token,
-                refreshToken: tokens.refresh_token,
-                tokenType: tokens.token_type,
-                expiresIn: tokens.expires_in,
-            },
-        );
-        return tokens.access_token;
-    },
-
-    async revokeAccount(userId: ObjectId): Promise<void> {
-        const userAccount = await GoogleAccountRepository.findByUserId(userId);
-
-        if (userAccount?.encryptedTokens) {
-            let stored: StoredGoogleTokens | undefined;
-            try {
-                stored = JSON.parse(decrypt(userAccount.encryptedTokens)) as StoredGoogleTokens;
-            } catch {
-                stored = undefined;
-            }
-
-            const token = stored?.refreshToken ?? stored?.accessToken;
-
-            if (token) {
-                try {
-                    await fetch(env.google.revokeUrl, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: new URLSearchParams({ token }),
-                    });
-                } catch {
-                    // Revocation is best-effort; the local record is removed regardless.
-                }
-            }
-        }
-
-        await GoogleAccountRepository.deleteByUserId(userId);
-    },
-};
-
-//reviewed
 const refreshAccessToken = async (refreshToken: string): Promise<GoogleTokenResponse> => {
-    let response: Response;
+    let response: globalThis.Response;
 
     try {
         response = await fetch(env.google.tokenUrl, {
@@ -122,4 +54,99 @@ const refreshAccessToken = async (refreshToken: string): Promise<GoogleTokenResp
     };
 
     return data as GoogleTokenResponse;
+};
+
+export const GoogleOAuthService = {
+    async validateGoogleAC(req: Request) {
+        const userId = req.userId;
+
+        if (!userId) {
+            throw new ApiError(401, "Authentication required");
+        };
+
+        const userAccount = await GoogleAccountRepository.findByUserId(userId);
+        if (!userAccount) {
+            throw new ApiError(404, "Google account not connected");
+        };
+
+        if (userAccount.expiresAt && userAccount.expiresAt.getTime() > Date.now() + thresholdMs) {
+            return;
+        };
+
+        const decryptedTokens = JSON.parse(decrypt(userAccount.encryptedTokens)) as StoredGoogleTokens;
+
+        if (typeof decryptedTokens.accessToken !== "string") {
+            throw new ApiError(401, "Missing access token");
+        };
+
+        if (typeof decryptedTokens.refreshToken !== "string") {
+            throw new ApiError(401, "Google authorization required");
+        };
+
+        const tokens = await refreshAccessToken(decryptedTokens.refreshToken);
+
+        const updated = await GoogleAccountRepository.updateTokens(
+            userId,
+            {
+                accessToken: tokens.access_token,
+                refreshToken: tokens.refresh_token,
+                tokenType: tokens.token_type,
+                expiresIn: tokens.expires_in,
+            },
+        );
+
+        if (!updated?.acknowledged) {
+            throw new ApiError(500, "Falied to authenticate google Account! Internal Server Error!");
+        };
+
+        return;
+    },
+
+    //unused
+    // async revokeAccount(userId: ObjectId): Promise<void> {
+    //     const userAccount = await GoogleAccountRepository.findByUserId(userId);
+
+    //     if (userAccount?.encryptedTokens) {
+    //         let stored: StoredGoogleTokens | undefined;
+    //         try {
+    //             stored = JSON.parse(decrypt(userAccount.encryptedTokens)) as StoredGoogleTokens;
+    //         } catch {
+    //             stored = undefined;
+    //         }
+
+    //         const token = stored?.refreshToken ?? stored?.accessToken;
+
+    //         if (token) {
+    //             try {
+    //                 await fetch(env.google.revokeUrl, {
+    //                     method: "POST",
+    //                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    //                     body: new URLSearchParams({ token }),
+    //                 });
+    //             } catch {
+    //                 // Revocation is best-effort; the local record is removed regardless.
+    //             }
+    //         }
+    //     }
+
+    //     await GoogleAccountRepository.deleteByUserId(userId);
+    // },
+
+    //unused
+    // async getValidAccessToken(userId: ObjectId): Promise<string> {
+    //     const userAccount = await GoogleAccountRepository.findByUserId(userId);
+
+    //     if (!userAccount) {
+    //         throw new ApiError(404, "Google account not connected");
+    //     };
+
+    //     const decryptedTokens = JSON.parse(decrypt(userAccount.encryptedTokens)) as StoredGoogleTokens;
+
+    //     if (typeof decryptedTokens.accessToken !== "string") {
+    //         throw new ApiError(401, "Missing access token");
+    //     };
+
+    //     return decryptedTokens.accessToken;
+
+    // },
 };

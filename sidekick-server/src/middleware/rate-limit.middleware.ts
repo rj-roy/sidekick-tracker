@@ -3,7 +3,7 @@ import { RedisStore } from "rate-limit-redis";
 import { createClient } from "redis";
 import type { Request, Response } from "express";
 import type { RedisReply } from "rate-limit-redis";
-import { ApiResponse } from "../utils/ApiRsponse.js";
+import { ApiResponse } from "../utils/http/ApiRsponse.js";
 import { env } from "../config/env.js";
 
 type KeyFn = (req: Request) => string;

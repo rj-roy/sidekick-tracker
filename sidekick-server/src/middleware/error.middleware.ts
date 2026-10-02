@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { env } from "../config/env.js";
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiRsponse.js";
+import { ApiError } from "../utils/error/ApiError.js";
+import { ApiResponse } from "../utils/http/ApiRsponse.js";
 
 export const errorHandler = (err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof ApiError) {

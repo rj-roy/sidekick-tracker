@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { AuthController } from "./auth.controller.js";
-import { asyncHandler } from "../../utils/async-handler.js";
+import { asyncHandler } from "../../utils/http/async-handler.js";
 import { createRateLimit, userAwareKey } from "../../middleware/rate-limit.middleware.js";
-import { authenticator } from "../../middleware/auth.middleware.js";
+import { authenticator } from "../../middleware/authenticator.js";
 import { requireCsrf } from "../../middleware/csrf.middleware.js";
 
 const router = Router();
@@ -12,46 +12,26 @@ const ipShield = () => createRateLimit({ windowMs: 60_000, limit: 300 });
 const userLimit = (windowMs: number, limit: number) =>
     createRateLimit({ windowMs, limit, keyGenerator: userAwareKey });
 
-//reviewed
 router.get(
     "/google/login",
     createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
     AuthController.googleAuthRedirect
 );
 
-//reviewed
-router.get(
+router.post(
     "/google/callback",
     createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
     asyncHandler(AuthController.handleGoogleCallback)
 );
 
-//reviewed
 router.get(
-    "/me",
+    "/get/session",
     ipShield(),
     authenticator,
     userLimit(60_000, 60),
-    asyncHandler(AuthController.getMe)
+    asyncHandler(AuthController.getSession)
 );
 
-//reviewed only server-side
-router.get(
-    "/csrf",
-    ipShield(),
-    authenticator,
-    userLimit(60_000, 30),
-    asyncHandler(AuthController.getCsrfToken)
-);
-
-//reviewed
-router.get(
-    "/sessions",
-    ipShield(),
-    authenticator,
-    userLimit(60_000, 30),
-    asyncHandler(AuthController.sessionList)
-);
 
 //reviewed, todo: this is not "delete" its "update"
 router.delete(
