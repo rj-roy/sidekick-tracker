@@ -1,11 +1,11 @@
 import type { User } from "@/shared/types/AuthType";
 import { CircleHelp, LogOut } from "lucide-react";
-import PixelRuleManager from "@/feature/tracking-pixel/components/PixelRuleManager";
+import TrackEmailCard from "@/feature/email-tracking/components/TrackEmailCard";
 
 export default function Dashboard({user, handleLogOut }: { user:User , handleLogOut: () => void }) {
     return (
         <div className="p-4">
-            <PixelRuleManager />
+            <TrackEmailCard />
 
             <div className="mt-3 flex justify-center">
                 <button className="flex items-center gap-1 text-[10px] text-muted hover:text-primary">

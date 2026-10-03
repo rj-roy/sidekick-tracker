@@ -4,9 +4,8 @@ import { statusHandler } from "../statusHandler";
 import { ApiResponse } from "@/types/apiTypes";
 import { getCookie, setCookie } from "../cookies";
 import { getClientInfo } from "./clientInfo";
-import { ApiError } from "next/dist/server/api-utils";
 
-type Opts = { method?: string; body?: unknown; headers?: Record<string, string> };
+type Opts = { method?: string; body?: unknown; headers?: Record<string, string>; redirectOnAuthError?: boolean };
 
 const sha256 = (s: string) => crypto.createHash("sha256").update(s).digest("hex");
 
@@ -15,7 +14,7 @@ export async function signedFetch<T>(path: string, opts: Opts = {}): Promise<Api
   const csrf = await getCookie("T_ls_");
 
   if (!session || !csrf) {
-    return new ApiError(401, "Authentication Required!");
+    return { success: false, message: "Authentication Required!" };
   };
 
   const method = (opts.method ?? "GET").toUpperCase();
@@ -49,13 +48,11 @@ export async function signedFetch<T>(path: string, opts: Opts = {}): Promise<Api
     cache: "no-store",
   });
 
-  console.log(res, "response");
-
   const rotatedSession = res.headers.get("x-r-session-token");
   const rotatedCsrf = res.headers.get("x-r-csrf-token");
 
   if (rotatedSession) await setCookie("OG_L", rotatedSession);
   if (rotatedCsrf) await setCookie("T_ls_", rotatedCsrf);
 
-  return statusHandler<T>(res);
+  return statusHandler<T>(res, { redirectOnAuthError: opts.redirectOnAuthError });
 };

@@ -1,26 +1,24 @@
-import { getRules } from "@/feature/tracking-pixel/storage/storage";
-import { firePixelsForRules } from "@/feature/tracking-pixel/utils/injector";
+import { getComposeState, initGmailListeners, injectPixel } from "@/feature/email-tracking/gmail";
+import { GET_COMPOSE_STATE, INJECT_PIXEL } from "@/feature/email-tracking/messages";
+import type { InjectPixelPayload } from "@/feature/email-tracking/types";
 
 export default defineContentScript({
-  matches: ['<all_urls>'],
+  matches: ["https://mail.google.com/*"],
 
-  async main(ctx) {
-    try {
-      const rules = await getRules();
-      firePixelsForRules(rules, "pageLoad");
-    } catch (error) {
-      console.error("Pixel injector content script error:", error);
-    }
+  main() {
+    initGmailListeners();
 
-    const handleNavigation = async () => {
-      try {
-        const rules = await getRules();
-        firePixelsForRules(rules, "spaNavigation");
-      } catch (error) {
-        console.error("Pixel injector SPA navigation error:", error);
+    //used: true
+    browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+      switch (message?.type) {
+        case GET_COMPOSE_STATE:
+          sendResponse(getComposeState());
+          return;
+
+        case INJECT_PIXEL:
+          sendResponse(injectPixel(message.payload as InjectPixelPayload));
+          return;
       }
-    };
-
-    ctx.addEventListener(window, 'wxt:locationchange', handleNavigation);
+    });
   },
 });

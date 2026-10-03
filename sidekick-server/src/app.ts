@@ -3,6 +3,7 @@ import { env } from "./config/env.js";
 import { errorHandler, notFound } from "./middleware/error.middleware.js";
 
 import { authRouter } from "./modules/auth/index.js";
+import { trackingRouter } from "./modules/tracking/index.js";
 import cookieParser from "cookie-parser";
 import { verifyClientReq } from "./middleware/verifyClientReq.js";
 
@@ -67,6 +68,9 @@ app.use(express.json({
   verify: (req, _res, buf) => {(req as any).rawBody = buf},
 }));
 
+// // public pixel endpoint: requested by mail clients, no signed request available
+// app.use("/pixel", publicTrackingRouter);
+
 app.use(verifyClientReq);
 app.use(cookieParser())
 
@@ -74,7 +78,9 @@ app.get("/api/health", async (_req, res) => {
     res.json({ status: "ok", message: "Server is runnig perfectly" });
 });
 
+app.use("/tracking", trackingRouter);
 app.use('/auth', authRouter);
+
 
 app.use(notFound);
 app.use(errorHandler);

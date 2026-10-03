@@ -1,7 +1,10 @@
 import { ApiResponse } from "@/types/apiTypes";
 import { redirect } from "next/navigation";
 
-export const statusHandler = async <T>(res: Response): Promise<ApiResponse<T>> => {
+export const statusHandler = async <T>(
+  res: Response,
+  { redirectOnAuthError = true }: { redirectOnAuthError?: boolean } = {}
+): Promise<ApiResponse<T>> => {
   const redirectMap: Record<number, string> = {
     401: "/unauthorized",
     403: "/forbidden",
@@ -9,15 +12,15 @@ export const statusHandler = async <T>(res: Response): Promise<ApiResponse<T>> =
 
   const path = redirectMap[res.status];
 
-  if (path) {
+  if (path && redirectOnAuthError) {
     redirect(path);
   }
 
   const headers = res.headers;
-  const result = (await res.json()) as ApiResponse<T>;
+  const result = (await res.json().catch(() => null)) as ApiResponse<T> | null;
 
-  if (!res.ok) {
-    return { success: false, message: result.message || res.statusText };
+  if (!res.ok || !result?.success) {
+    return { success: false, message: result?.message || res.statusText };
   };
 
   return { ...result, headers };

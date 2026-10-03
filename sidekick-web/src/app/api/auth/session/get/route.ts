@@ -1,15 +1,10 @@
 import { signedFetch } from "@/lib/server/signedFetch";
+import { isTrustedExtension } from "@/lib/server/extensionAuth";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
-    const isExtension = req.headers.get('x-client-type')
-
-    if (isExtension === "extension") {
-        const exId = req.headers.get("x-extension-id");
-
-        if (exId !== process.env.EXTENSION_ID) {
-            return NextResponse.json({status: 401, message: "unauthorized"});
-        };
+    if (!isTrustedExtension(req)) {
+        return NextResponse.json({ success: false, message: "unauthorized" }, { status: 401 });
     };
 
     const res = await signedFetch("/auth/get/session");
