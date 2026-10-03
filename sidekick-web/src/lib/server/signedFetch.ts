@@ -4,12 +4,20 @@ import { statusHandler } from "../statusHandler";
 import { ApiResponse } from "@/types/apiTypes";
 import { getCookie, setCookie } from "../cookies";
 import { getClientInfo } from "./clientInfo";
+import { ApiError } from "next/dist/server/api-utils";
 
 type Opts = { method?: string; body?: unknown; headers?: Record<string, string> };
 
 const sha256 = (s: string) => crypto.createHash("sha256").update(s).digest("hex");
 
 export async function signedFetch<T>(path: string, opts: Opts = {}): Promise<ApiResponse<T>> {
+  const session = await getCookie("OG_L");
+  const csrf = await getCookie("T_ls_");
+
+  if (!session || !csrf) {
+    return new ApiError(401, "Authentication Required!");
+  };
+
   const method = (opts.method ?? "GET").toUpperCase();
   const body = opts.body === undefined ? "" : JSON.stringify(opts.body);
   const ts = Date.now().toString();
@@ -22,8 +30,7 @@ export async function signedFetch<T>(path: string, opts: Opts = {}): Promise<Api
     .update(canonical)
     .digest("hex");
 
-  const session = await getCookie("OG_L");
-  const csrf = await getCookie("T_ls_");
+
 
   const res = await fetch(`${process.env.API_BASE}${path}`, {
     method,
@@ -41,6 +48,8 @@ export async function signedFetch<T>(path: string, opts: Opts = {}): Promise<Api
     body: body || undefined,
     cache: "no-store",
   });
+
+  console.log(res, "response");
 
   const rotatedSession = res.headers.get("x-r-session-token");
   const rotatedCsrf = res.headers.get("x-r-csrf-token");

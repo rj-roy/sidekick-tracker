@@ -16,7 +16,10 @@ export default defineConfig({
     permissions: [
       "storage",
       "tabs",
+      "activeTab",
     ],
+
+    optional_host_permissions: ["<all_urls>"],
 
     host_permissions: [
       "https://mail.google.com/*",

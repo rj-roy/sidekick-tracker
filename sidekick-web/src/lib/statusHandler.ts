@@ -17,7 +17,7 @@ export const statusHandler = async <T>(res: Response): Promise<ApiResponse<T>> =
   const result = (await res.json()) as ApiResponse<T>;
 
   if (!res.ok) {
-    return { success: false, message: result.message };
+    return { success: false, message: result.message || res.statusText };
   };
 
   return { ...result, headers };
