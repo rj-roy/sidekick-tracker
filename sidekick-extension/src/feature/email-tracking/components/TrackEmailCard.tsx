@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, ExternalLink, Loader2, RefreshCw, TriangleAlert } from "lucide-react";
-import { GET_COMPOSE_STATE, TRACK_EMAIL } from "../messages";
-import type { ComposeState, TrackResult } from "../types";
+import type { ComposeState, TrackResult } from "@/shared/types/TrackingTypes";
+import { GET_COMPOSE_STATE, TRACK_EMAIL } from "@/shared/constants/api";
 
 type CardState =
   | { status: "checking" }
@@ -122,13 +122,13 @@ export default function TrackEmailCard() {
                   disabled={!state.compose.hasCompose}
                   className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-signal px-4 py-2.5 text-[12px] font-semibold text-white transition hover:bg-signal-hover disabled:opacity-50"
                 >
-                  Add tracking pixel
+                  Click to Track this mail
                 </button>
               </>
             ) : (
               <>
                 <p className="text-[11px] text-secondary">
-                  Open a draft in Gmail, then come back here to add the pixel.
+                  Open a draft in Gmail, then come back here to track this mail.
                 </p>
 
                 <button
@@ -147,10 +147,7 @@ export default function TrackEmailCard() {
           <div className="flex items-start gap-2 rounded-md bg-success-soft px-2.5 py-2">
             <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-success" />
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold text-success">Pixel added to this draft</p>
-              <p className="mt-0.5 truncate font-mono text-[10px] text-secondary">
-                {state.token}
-              </p>
+              <p className="text-[11px] font-semibold text-success">Tracking is enabled for this email</p>
             </div>
           </div>
         )}

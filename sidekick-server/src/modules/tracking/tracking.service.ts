@@ -1,15 +1,15 @@
-import { randomBytes } from "crypto";
 import type { ObjectId } from "mongodb";
 import { ApiError } from "../../utils/error/ApiError.js";
 import { TrackingRepository } from "./tracking.repository.js";
 import type { CreateTrackingMeta, CreatedTracking, TrackedEmailDoc } from "./tracking.types.js";
+import { encrypt, generateToken, hash } from "../../utils/security/crypto.js";
 
-const TOKEN_BYTES = 24;
+// const TOKEN_BYTES = 24;
 const MAX_SUBJECT_LENGTH = 200;
 const MAX_RECIPIENTS = 100;
 const MAX_ATTEMPTS = 3;
 
-const generateToken = (): string => randomBytes(TOKEN_BYTES).toString("base64url");
+// const generateToken = (): string => randomBytes(TOKEN_BYTES).toString("base64url");
 
 // const TOKEN_PATTERN = /^[A-Za-z0-9_-]{32}$/;
 // export const isValidTrackingToken = (value: unknown): value is string =>
@@ -25,10 +25,12 @@ export const TrackingService = {
             MAX_RECIPIENTS
         );
 
+        const token = generateToken();
+
         for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             const doc: TrackedEmailDoc = {
                 userId,
-                uniqueToken: generateToken(),
+                uniqueToken: hash(token),
                 status: "pending",
                 recipientCount,
                 openCount: 0,
@@ -39,7 +41,7 @@ export const TrackingService = {
 
             try {
                 await TrackingRepository.createTrackedEmail(doc);
-                return { token: doc.uniqueToken, createdAt: now };
+                return { token: encrypt(token), createdAt: now };
 
             } catch (err) {
                 const isCollision = err instanceof ApiError && err.code === "TRACKING_TOKEN_COLLISION";

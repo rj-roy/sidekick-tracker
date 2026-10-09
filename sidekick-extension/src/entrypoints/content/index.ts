@@ -1,14 +1,14 @@
+import { defineContentScript } from '#imports';
 import { getComposeState, initGmailListeners, injectPixel } from "@/feature/email-tracking/gmail";
-import { GET_COMPOSE_STATE, INJECT_PIXEL } from "@/feature/email-tracking/messages";
-import type { InjectPixelPayload } from "@/feature/email-tracking/types";
+import { GET_COMPOSE_STATE, INJECT_PIXEL } from '@/shared/constants/api';
+import type { InjectPixelPayload } from '@/shared/types/TrackingTypes';
 
 export default defineContentScript({
-  matches: ["https://mail.google.com/*"],
+  matches: ['<all_urls>'],
 
-  main() {
+  main(ctx) {
     initGmailListeners();
 
-    //used: true
     browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       switch (message?.type) {
         case GET_COMPOSE_STATE:

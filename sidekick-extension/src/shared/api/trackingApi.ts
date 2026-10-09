@@ -1,5 +1,5 @@
 import { apiClient } from "@/shared/api/client";
-import type { CreatePixelPayload, PixelCredential } from "./types";
+import type { CreatePixelPayload, PixelCredential } from "../types/TrackingTypes";
 
 export const PixelApi = {
   async create(payload: CreatePixelPayload = {}): Promise<PixelCredential> {

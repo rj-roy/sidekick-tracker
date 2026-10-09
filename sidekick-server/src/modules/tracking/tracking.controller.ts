@@ -40,7 +40,6 @@ import { TrackingService } from "./tracking.service.js";
 
 export const TrackingController = {
     async create(req: Request, res: Response) {
-        console.log(req);
         if (!req.userId) {
             throw new ApiError(401, "Authentication required", "SESSION_INVALID");
         };

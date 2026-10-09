@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto, { createHash, randomBytes } from "crypto";
 import { env } from "../../config/env.js";
 import { ApiError } from "../error/ApiError.js";
 
@@ -41,4 +41,7 @@ export function decrypt(value: string, sec?: boolean): string {
   } catch (err) {
     throw new ApiError(400, "Failed to decrypt value");
   }
-}
+};
+
+export const generateToken = (): string => randomBytes(32).toString('base64url');
+export const hash = (value: string): string => createHash("sha256").update(value).digest("hex");

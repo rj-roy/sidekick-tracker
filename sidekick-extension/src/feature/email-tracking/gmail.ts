@@ -1,5 +1,5 @@
+import type { ComposeState, InjectPixelPayload, InjectPixelResult } from "@/shared/types/TrackingTypes";
 import { EDITOR_SELECTOR, PIXEL_ATTRIBUTE, SUBJECT_SELECTOR } from "./selector";
-import type { ComposeState, InjectPixelPayload, InjectPixelResult } from "./types";
 
 let lastFocusedEditor: HTMLElement | null = null;
 
@@ -35,46 +35,6 @@ const activeEditor = (): HTMLElement | null => {
   };
 
   return editors[editors.length - 1] ?? null;
-};
-
-export const initGmailListeners = (): void => {
-  document.addEventListener("focusin", (event) => {
-    const target = event.target;
-
-    if (!(target instanceof HTMLElement)) {
-      return;
-    };
-
-    const editor = target.closest<HTMLElement>(EDITOR_SELECTOR);
-
-    if (editor && isVisible(editor)) {
-      lastFocusedEditor = editor;
-    };
-  }, true);
-};
-
-export const getComposeState = (): ComposeState => {
-  const editor = activeEditor();
-
-  if (!editor) {
-    return { supported: true, hasCompose: false, recipientCount: 0 };
-  };
-
-  const root = composeRoot(editor);
-  const subjectInput = root.querySelector<HTMLInputElement>(SUBJECT_SELECTOR)
-    ?? document.querySelector<HTMLInputElement>(SUBJECT_SELECTOR);
-
-  const trackedToken = editor
-    .querySelector(`img[${PIXEL_ATTRIBUTE}]`)
-    ?.getAttribute(PIXEL_ATTRIBUTE);
-
-  return {
-    supported: true,
-    hasCompose: true,
-    recipientCount: root.querySelectorAll("span[email]").length,
-    ...(subjectInput?.value ? { subject: subjectInput.value } : {}),
-    ...(trackedToken ? { trackedToken } : {}),
-  };
 };
 
 const placeCaretAtEnd = (editor: HTMLElement): void => {
@@ -117,6 +77,7 @@ const insertWithDom = (editor: HTMLElement, payload: InjectPixelPayload): void =
 };
 
 export const injectPixel = (payload: InjectPixelPayload): InjectPixelResult => {
+  //todo-ex: tracking id or key save to local storage
   const editor = activeEditor();
 
   if (!editor) {
@@ -136,4 +97,44 @@ export const injectPixel = (payload: InjectPixelPayload): InjectPixelResult => {
   const injected = !!editor.querySelector(`img[${PIXEL_ATTRIBUTE}="${payload.token}"]`);
 
   return injected ? { ok: true } : { ok: false, reason: "content-unreachable" };
+};
+
+export const initGmailListeners = (): void => {
+  document.addEventListener("focusin", (event) => {
+    const target = event.target;
+
+    if (!(target instanceof HTMLElement)) {
+      return;
+    };
+
+    const editor = target.closest<HTMLElement>(EDITOR_SELECTOR);
+
+    if (editor && isVisible(editor)) {
+      lastFocusedEditor = editor;
+    };
+  }, true);
+};
+
+export const getComposeState = (): ComposeState => {
+  const editor = activeEditor();
+
+  if (!editor) {
+    return { supported: true, hasCompose: false, recipientCount: 0 };
+  };
+
+  const root = composeRoot(editor);
+  const subjectInput = root.querySelector<HTMLInputElement>(SUBJECT_SELECTOR)
+    ?? document.querySelector<HTMLInputElement>(SUBJECT_SELECTOR);
+
+  const trackedToken = editor
+    .querySelector(`img[${PIXEL_ATTRIBUTE}]`)
+    ?.getAttribute(PIXEL_ATTRIBUTE);
+
+  return {
+    supported: true,
+    hasCompose: true,
+    recipientCount: root.querySelectorAll("span[email]").length,
+    ...(subjectInput?.value ? { subject: subjectInput.value } : {}),
+    ...(trackedToken ? { trackedToken } : {}),
+  };
 };
