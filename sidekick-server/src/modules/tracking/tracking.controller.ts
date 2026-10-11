@@ -39,19 +39,43 @@ import { TrackingService } from "./tracking.service.js";
 // };
 
 export const TrackingController = {
-    async create(req: Request, res: Response) {
+    // async create(req: Request, res: Response) {
+    //     if (!req.userId) {
+    //         throw new ApiError(401, "Authentication required", "SESSION_INVALID");
+    //     };
+
+    //     const meta = (req.body ?? {}) as { subject?: unknown; recipientCount?: unknown };
+
+    //     const created = await TrackingService.createTracking(req.userId, {
+    //         subject: typeof meta.subject === "string" ? meta.subject : undefined,
+    //         recipientCount: typeof meta.recipientCount === "number" ? meta.recipientCount : undefined,
+    //     });
+
+    //     return ApiResponse.success(res, "Tracking pixel created", created, 201);
+
+    // },
+
+    async markSent(req: Request, res: Response) {
         if (!req.userId) {
             throw new ApiError(401, "Authentication required", "SESSION_INVALID");
         };
 
-        const meta = (req.body ?? {}) as { subject?: unknown; recipientCount?: unknown };
+        const body = (req.body ?? {}) as { trackingToken?: unknown; subject?: unknown; recipient: string[] };
 
-        const created = await TrackingService.createTracking(req.userId, {
-            subject: typeof meta.subject === "string" ? meta.subject : undefined,
-            recipientCount: typeof meta.recipientCount === "number" ? meta.recipientCount : undefined,
+        if (typeof body.trackingToken !== "string" || body.trackingToken.length === 0) {
+            throw new ApiError(400, "Missing tracking trackingToken", "TRACKING_TOKEN_MISSING");
+        };
+
+        const updated = await TrackingService.markTrackedEmailSent(body.trackingToken, req.userId, {
+            subject: typeof body.subject === "string" ? body.subject : undefined,
+            recipient: body.recipient ?? [],
         });
 
-        return ApiResponse.success(res, "Tracking pixel created", created, 201);
+        if (!updated) {
+            throw new ApiError(404, "Unknown tracking token", "TRACKING_NOT_FOUND");
+        };
+
+        return ApiResponse.success(res, "Tracked email marked as sent", updated, 200);
     },
 
     // async open(req: Request, res: Response) {

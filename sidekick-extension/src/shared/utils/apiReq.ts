@@ -2,21 +2,21 @@ import { API_BASE_URL } from "../constants/api";
 import type { ApiRes } from "../types/ApiTypes";
 import { apiClientError } from "./apiClientError";
 
-const isStorageKeyLive = (): void => {
-  if (!browser.storage?.session) {
-    throw new Error("chrome.storage.session is not available in this browser");
-  }
-};
+// const isStorageKeyLive = (): void => {
+//   if (!browser.storage?.session) {
+//     throw new Error("chrome.storage.session is not available in this browser");
+//   }
+// };
 
-const getTokens = async (keys: string[]): Promise<Record<string, unknown>> => {
-  isStorageKeyLive();
-  return browser.storage.session.get(keys);
-};
+// const getTokens = async (keys: string[]): Promise<Record<string, unknown>> => {
+//   isStorageKeyLive();
+//   return browser.storage.session.get(keys);
+// };
 
-const updateTokens = async (values: Record<string, unknown>): Promise<void> => {
-  isStorageKeyLive();
-  await browser.storage.session.set(values);
-};
+// const updateTokens = async (values: Record<string, unknown>): Promise<void> => {
+//   isStorageKeyLive();
+//   await browser.storage.session.set(values);
+// };
 
 export const apiReq = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const extensionId = browser.runtime.id;
@@ -31,8 +31,6 @@ export const apiReq = async <T>(path: string, init?: RequestInit): Promise<T> =>
       ...(init?.headers ?? {}),
     },
   });
-
-  console.log(res);
 
   const body = (await res.json().catch(() => null)) as ApiRes<T> | null;
 

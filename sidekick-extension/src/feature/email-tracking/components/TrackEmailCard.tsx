@@ -1,22 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, ExternalLink, Loader2, RefreshCw, TriangleAlert } from "lucide-react";
-import type { ComposeState, TrackResult } from "@/shared/types/TrackingTypes";
+import type { CardState, ComposeState, TrackResult } from "@/feature/email-tracking/TrackingTypes";
 import { GET_COMPOSE_STATE, TRACK_EMAIL } from "@/shared/constants/api";
-
-type CardState =
-  | { status: "checking" }
-  | { status: "idle"; compose: ComposeState }
-  | { status: "working" }
-  | { status: "tracked"; token: string }
-  | { status: "error"; message: string };
-
-const send = async <T,>(message: unknown): Promise<T | null> => {
-  try {
-    return (await browser.runtime.sendMessage(message)) as T;
-  } catch {
-    return null;
-  }
-};
+import { send } from "@/shared/utils/message/runtimeMessage";
 
 const FAILURE_MESSAGES: Record<string, string> = {
   "no-gmail-tab": "Opened a new Gmail compose window. Click Track again once it's ready.",
@@ -39,7 +25,7 @@ export default function TrackEmailCard() {
     };
 
     setState(compose.trackedToken
-      ? { status: "tracked", token: compose.trackedToken }
+      ? { status: "tracked", trackingToken: compose.trackedToken }
       : { status: "idle", compose });
   }, []);
 
@@ -58,12 +44,12 @@ export default function TrackEmailCard() {
     };
 
     if (result.ok) {
-      setState({ status: "tracked", token: result.token });
+      setState({ status: "tracked", trackingToken: result.trackingToken });
       return;
     };
 
     if (result.reason === "already-tracked" && result.message) {
-      setState({ status: "tracked", token: result.message });
+      setState({ status: "tracked", trackingToken: result.message });
       return;
     };
 
