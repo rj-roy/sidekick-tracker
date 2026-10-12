@@ -5,11 +5,14 @@ import { askContentScript } from "@/shared/utils/message/tab-message";
 import { activeTab, trackActiveEmail } from "@/feature/email-tracking/trackingService";
 import { MailApi } from "@/feature/email-tracking/trackingApi";
 import { updateDraftStatus } from "@/shared/utils/syncStore";
+import { injectIntoOpenGmailTabs } from "@/shared/utils/message/contentScript";
 
 export default defineBackground(() => {
   browser.storage.session.setAccessLevel({
     accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS",
   });
+
+  void injectIntoOpenGmailTabs();
 
   browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     switch (message?.type) {
@@ -69,7 +72,7 @@ export default defineBackground(() => {
             await updateDraftStatus(trackingToken, "sent");
             await MailApi.markSent({
               trackingToken,
-              subject: subject ?? "", 
+              subject: subject ?? "",
               sentAt: sentAt ?? Date.now(),
               recipient: recipient ?? [],
             });

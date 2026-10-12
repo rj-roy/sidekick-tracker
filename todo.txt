@@ -8,8 +8,8 @@ Start processing the auth to extension.
 Review clerk auth, sentry error tracking, 
 
 todoExtension: {
-   1. prevent background automatic localhost:5000 pixel injection;
    2. mail.google.com url detection problem after refreshing the extension;
+   2***. initialize idempotency key for pushing the tracked mail to database.
 };
 
 //opened by, opened at, is frowarded and is it opened
