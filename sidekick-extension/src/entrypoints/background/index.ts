@@ -6,6 +6,7 @@ import { activeTab, trackActiveEmail } from "@/feature/email-tracking/trackingSe
 import { MailApi } from "@/feature/email-tracking/trackingApi";
 import { updateDraftStatus } from "@/shared/utils/syncStore";
 import { injectIntoOpenGmailTabs } from "@/shared/utils/message/contentScript";
+import { alreadySent, inFlightSends, sessionKey } from "@/feature/email-tracking/content/sendState";
 
 export default defineBackground(() => {
   browser.storage.session.setAccessLevel({
@@ -68,6 +69,13 @@ export default defineBackground(() => {
             recipient?: string[];
           };
 
+          if (await alreadySent(trackingToken)) {
+            sendResponse({ ok: true, duplicate: true });
+            return;
+          };
+
+          inFlightSends.add(trackingToken);
+
           try {
             await updateDraftStatus(trackingToken, "sent");
             await MailApi.markSent({
@@ -76,6 +84,8 @@ export default defineBackground(() => {
               sentAt: sentAt ?? Date.now(),
               recipient: recipient ?? [],
             });
+
+            await browser.storage.session.set({ [sessionKey(trackingToken)]: Date.now() });
 
             sendResponse({ ok: true });
           } catch (error) {
@@ -86,6 +96,8 @@ export default defineBackground(() => {
 
             console.error("[background] mark sent failed:", error);
             sendResponse({ ok: false, reason: "server-error" });
+          } finally {
+            inFlightSends.delete(trackingToken);
           }
         })();
 

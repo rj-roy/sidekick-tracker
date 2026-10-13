@@ -8,8 +8,9 @@ Start processing the auth to extension.
 Review clerk auth, sentry error tracking, 
 
 todoExtension: {
-   2. mail.google.com url detection problem after refreshing the extension;
    2***. initialize idempotency key for pushing the tracked mail to database.
+   3. msgId should fixed length matching with the userId and not detectable that matched with userId,
+   4. prevent unnecessary data push insted of api and without permission,
 };
 
 //opened by, opened at, is frowarded and is it opened

@@ -35,5 +35,9 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, message: res.message }, { status: 401 });
     }
 
-    return NextResponse.json({ success: true, message: "Tracking marked as sent" });
+    return NextResponse.json({
+        success: true,
+        message: res.message ?? "Tracking marked as sent",
+        ...(res.data ? { data: res.data } : {}),
+    });
 }

@@ -8,7 +8,9 @@ export interface TrackedEmailDoc {
     status: TrackedEmailStatus;
     messageId?: string;
     subject?: string;
+    recipient: string[];
     recipientCount: number;
+    opened: boolean;
     openCount: number;
     firstOpenedAt?: Date;
     createdAt: Date;

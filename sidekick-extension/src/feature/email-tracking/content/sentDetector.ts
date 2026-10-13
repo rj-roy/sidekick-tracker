@@ -6,8 +6,12 @@ export type PendingSend = { trackingToken: string; subject: string; at: number; 
 
 const SEND_WINDOW_MS = 60_000;
 let pendingSends: PendingSend[] = [];
+let initialized = false;
 
-const record = (intent: PendingSend | null): void => { if (intent) pendingSends.push(intent); };
+const record = (intent: PendingSend | null): void => {
+    if (!intent) return;
+    pendingSends = [...pendingSends.filter((p) => p.trackingToken !== intent.trackingToken), intent];
+};
 
 const sendIntentFromClick = (event: Event): PendingSend | null => {
     if (!(event.target instanceof HTMLElement)) return null;
@@ -40,9 +44,15 @@ export const prunePendingSends = (): void => {
 
 export const flushPendingSends = (tokens: Set<string>): void => {
     if (tokens.size === 0) return;
-    const sent = pendingSends.filter((p) => tokens.has(p.trackingToken));
+
+    const sent = new Map<string, PendingSend>();
+    for (const p of pendingSends) {
+        if (tokens.has(p.trackingToken)) sent.set(p.trackingToken, p);
+    };
+
     pendingSends = pendingSends.filter((p) => !tokens.has(p.trackingToken));
-    for (const p of sent) {
+
+    for (const p of sent.values()) {
         notifyEmailSent({
             trackingToken: p.trackingToken,
             subject: p.subject,
@@ -53,6 +63,8 @@ export const flushPendingSends = (tokens: Set<string>): void => {
 };
 
 export const initSendDetection = (): void => {
+    if (initialized) return;
+    initialized = true;
     document.addEventListener("click", (event) => record(sendIntentFromClick(event)), true);
     document.addEventListener("keydown", (event) => record(sendIntentFromKey(event)), true);
 };
