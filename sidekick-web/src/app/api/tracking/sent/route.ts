@@ -7,6 +7,7 @@ interface MarkSentBody {
     trackingToken?: string;
     subject?: string;
     sentAt?: number;
+    messageId?: string;
 };
 
 export async function POST(req: Request) {
@@ -27,6 +28,7 @@ export async function POST(req: Request) {
             recipient: body.recipient ?? [],
             ...(typeof body.subject === "string" ? { subject: body.subject } : {}),
             ...(typeof body.sentAt === "number" ? { sentAt: body.sentAt } : {}),
+            ...(typeof body.messageId === "string" ? { messageId: body.messageId } : {}),
         },
         redirectOnAuthError: false,
     });

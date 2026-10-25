@@ -8,9 +8,10 @@ Start processing the auth to extension.
 Review clerk auth, sentry error tracking, 
 
 todoExtension: {
-   2***. initialize idempotency key for pushing the tracked mail to database.
    3. msgId should fixed length matching with the userId and not detectable that matched with userId,
-   4. prevent unnecessary data push insted of api and without permission,
+   4**. also push the msgId to database for pixel injected mails
+   5. integrate the tracking api integration
+
 };
 
 //opened by, opened at, is frowarded and is it opened

@@ -1,16 +1,21 @@
-// import { Router } from "express";
-// import { asyncHandler } from "../../utils/http/async-handler.js";
-// import { createRateLimit } from "../../middleware/rate-limit.middleware.js";
-// import { TrackingController } from "./tracking.controller.js";
+import { Router, type Request } from "express";
+import { ipKeyGenerator } from "express-rate-limit";
+import { asyncHandler } from "../../utils/http/async-handler.js";
+import { createRateLimit } from "../../middleware/rate-limit.middleware.js";
+import { TrackingController } from "./tracking.controller.js";
 
-// const router = Router();
+const router = Router();
 
-// // hit by mail clients (gmail image proxy, outlook, apple mail) — no HMAC signature available,
-// // so this router is mounted before verifyClientReq and must stay free of auth middleware
-// router.get(
-//     "/open/:token",
-//     createRateLimit({ windowMs: 60_000, limit: 120 }),
-//     asyncHandler(TrackingController.open)
-// );
+const pixelKey = (req: Request): string => {
+    const token = req.path.split("/").pop() ?? "none";
+    const ip = ipKeyGenerator(req.get("x-client-ip") ?? req.ip ?? "");
+    return `${ip}:${token}`;
+};
 
-// export default router;
+router.get(
+    "/open/:token",
+    createRateLimit({ windowMs: 60_000, limit: 120, keyGenerator: pixelKey }),
+    asyncHandler(TrackingController.open)
+);
+
+export default router;
