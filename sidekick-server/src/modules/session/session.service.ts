@@ -1,4 +1,3 @@
-import { createHash, randomBytes } from "crypto";
 import { ObjectId } from "mongodb";
 import type { WithId } from "mongodb";
 import { env } from "../../config/env.js";
@@ -7,15 +6,13 @@ import { SessionRepository } from "./session.repository.js";
 import { ApiError } from "../../utils/error/ApiError.js";
 import { logSecurityEvent } from "../../utils/security/security-log.js";
 import { uaFamily } from "../../utils/user/userInfo.js";
+import { generateToken, hash } from "../../utils/security/crypto.js";
 
 interface ValidatedSession {
     session: WithId<SessionDoc>;
     rotatedToken?: string;
     rotatedSessionId?: string;
 };
-
-const generateToken = (): string => randomBytes(32).toString('base64url');
-const hash = (value: string): string => createHash("sha256").update(value).digest("hex");
 
 const rotateSessionToken = async (session: WithId<SessionDoc>, rotatedAt: Date):
     Promise<{ token: string; sessionId: string } | null> => {

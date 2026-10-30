@@ -1,34 +1,34 @@
-const _KEYS = ['OG_L', '_BH_Y', 'T_ls_', 'RR_LW__', '_r_rl'] as const;
-type SessionParams = Record<(typeof _KEYS)[number], string>;
+import { defineContentScript } from '#imports';
+import { GET_COMPOSE_STATE, INJECT_PIXEL } from '@/shared/constants/api';
+import type { InjectPixelPayload } from '@/feature/email-tracking/TrackingTypes';
+import { getComposeState, initGmailListeners, injectPixel } from '@/feature/email-tracking/content';
 
-const capctureSession = async (): Promise<boolean> => {
-  try {
-    const params = new URLSearchParams(location.search);
-
-    const capctured = Object.fromEntries(
-      _KEYS.map((key) => [key, params.get(key) ?? '']),
-    ) as SessionParams;
-
-    const hasAll = _KEYS.every((key) => capctured[key] !== '');
-    if (!hasAll) return false;
-
-    await browser.storage.session.set(capctured);
-    return true;
-  } catch (error) {
-    console.error('Failed to capture session:', error);
-    return false;
-  };
-
+declare global {
+  interface Window {
+    __sidekickContentStarted?: boolean;
+  }
 };
 
 export default defineContentScript({
-  matches: ['*://*.google.com/*', 'http://localhost/*'],
-  async main() {
+  matches: ['<all_urls>'],
+  runAt: 'document_start',
 
-    const capctured = await capctureSession();
-    if (capctured) {
-      console.log('Successfully signed in!');
-    };
+  main(ctx) {
+    if (window.__sidekickContentStarted) return;
+    window.__sidekickContentStarted = true;
 
+    initGmailListeners();
+
+    browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+      switch (message?.type) {
+        case GET_COMPOSE_STATE:
+          sendResponse(getComposeState());
+          return;
+
+        case INJECT_PIXEL:
+          sendResponse(injectPixel(message.payload as InjectPixelPayload));
+          return;
+      }
+    });
   },
 });

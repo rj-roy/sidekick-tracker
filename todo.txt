@@ -6,3 +6,12 @@ todo: user-agent validation
 Auth flow Just fix session toke rotation + on session if not google account return re authenticate, thats how authentication ends that return a session. Then deploy
 Start processing the auth to extension. 
 Review clerk auth, sentry error tracking, 
+
+todoExtension: {
+   3. msgId should fixed length matching with the userId and not detectable that matched with userId,
+   4**. also push the msgId to database for pixel injected mails
+   5. integrate the tracking api integration
+
+};
+
+//opened by, opened at, is frowarded and is it opened
