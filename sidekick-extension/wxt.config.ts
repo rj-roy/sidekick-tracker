@@ -16,11 +16,17 @@ export default defineConfig({
     permissions: [
       "storage",
       "tabs",
+      "activeTab",
+      "scripting",
+    ],
+
+    optional_host_permissions: [
+      "<all_urls>",
     ],
 
     host_permissions: [
       "https://mail.google.com/*",
-      "http://localhost:5000/*",
+      "http://localhost:3000/*",
     ],
 
     action: {

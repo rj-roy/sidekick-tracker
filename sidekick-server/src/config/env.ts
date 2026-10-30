@@ -191,6 +191,10 @@ export const env = {
     revokeOnHighRiskAnomaly,
   },
 
+  tracking: {
+    selfOpenGraceMs: nonNegativeInt("SELF_OPEN_GRACE_MS", 90_000),
+  },
+
   jobs: {
     emailPollIntervalMs: positiveInt("EMAIL_POLL_INTERVAL_MS", 5 * 60 * 1000),
     trackingCleanupIntervalMs: positiveInt("TRACKING_CLEANUP_INTERVAL_MS", 24 * 60 * 60 * 1000),

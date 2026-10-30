@@ -1,31 +1,33 @@
 import { Mail, Settings } from "lucide-react";
 import '../../styles/global.css';
 import { AuthApi } from "@/feature/auth/api";
-import { useSession } from "@/providers/sessionProvider";
 import MainRoute from "@/components/MainRoute";
+import { resolveSession } from "@/shared/utils/resolveSession";
+import type { SessionState } from "@/shared/types/AuthType";
 
 function App() {
-  // const { auth } = useSession();
-  // console.log(auth, "authljkdlf");
-  // const [status, setStatus] = useState<AuthState>('logged-out');
+  const [session, setSession] = useState<SessionState>({ status: "loading" });
 
-  const { session } = useSession();
-  console.log(session, "session nlol");
+  useEffect(() => {
+    const session = async () => {
+      const session = await resolveSession();
 
-  // useEffect(() => {
-  //   const session = async () => {
-  //     const session = await AuthApi.getSession();
-  //     console.log(session, session);
-  //   };
+      if(!session){
+        setSession({status: "unauthenticated"})
+      };
 
-  //   session();
-  // }, [])
+      if(session.status === "unauthenticated"){
+        setSession({status: "unauthenticated"})
+      };
+      
+      setSession(session);
+    };
 
+    session();
+  }, []);
 
-  let loggedIn = false;
 
   const handleSignIn = async () => {
-    console.log('siging In');
     await AuthApi.login()
   };
 
@@ -48,7 +50,7 @@ function App() {
           </div>
 
           {
-            loggedIn ?
+            session.status === 'authenticated' ?
               <button className="rounded-md p-1.5 text-muted hover:bg-page hover:text-primary">
                 <Settings className="size-4" />
               </button>
