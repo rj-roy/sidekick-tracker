@@ -13,9 +13,9 @@ export async function signedFetch<T>(path: string, opts: Opts = {}): Promise<Api
   const session = await getCookie("OG_L");
   const csrf = await getCookie("T_ls_");
 
-  if (!session || !csrf) {
-    return { success: false, message: "Authentication Required!" };
-  };
+  // if (!session || !csrf) {
+  //   return { success: false, message: "Authentication Required!" };
+  // };
 
   const method = (opts.method ?? "GET").toUpperCase();
   const body = opts.body === undefined ? "" : JSON.stringify(opts.body);
