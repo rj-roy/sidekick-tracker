@@ -16,8 +16,8 @@ const router = Router();
 // );
 router.post(
     "/sent",
-    createRateLimit({ windowMs: 60_000, limit: 120, keyGenerator: userAwareKey }),
     authenticator,
+    createRateLimit({ windowMs: 60_000, limit: 120, keyGenerator: userAwareKey }),
     requireCsrf,
     asyncHandler(TrackingController.markSent)
 );

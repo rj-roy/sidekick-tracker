@@ -1,6 +1,7 @@
 import "server-only";
 import crypto from "crypto";
 import { getClientInfo } from "./clientInfo";
+import { apiUrl } from "./apiUrl";
 
 const sha256 = (value: string) => crypto.createHash("sha256").update(value).digest("hex");
 
@@ -21,7 +22,7 @@ export async function externalApiFetch(path: string, opts: externalFetchOpts = {
 
     const { ip, ua } = await getClientInfo();
 
-    const resu = fetch(`${process.env.API_BASE}${path}`, {
+    const resu = fetch(apiUrl(path), {
         method,
         headers: {
             "x-ts": ts,

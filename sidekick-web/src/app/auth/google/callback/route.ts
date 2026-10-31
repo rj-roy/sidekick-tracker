@@ -35,8 +35,6 @@ export async function GET(req: Request) {
             },
         });
 
-        console.log(res);
-
     for (const name of cookieNames) {
         await deleteCookie(name);
     };

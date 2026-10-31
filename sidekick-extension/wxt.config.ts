@@ -26,7 +26,7 @@ export default defineConfig({
 
     host_permissions: [
       "https://mail.google.com/*",
-      "http://localhost:3000/*",
+      "https://sidekick-tracker-web.vercel.app/*",
     ],
 
     action: {

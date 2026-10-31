@@ -25,7 +25,7 @@ export const authenticator = async (req: Request, res: Response, next: NextFunct
     };
 
     const { userAgent } = validateUa(req.get("x-client-ua") || req.get("user-agent"));
-    const { clientIp } = validateIp(req.get("x-client-ip") || req.get("x-forwarded-for") || req.ip);
+    const { clientIp } = validateIp(req.get("x-client-ip") || req.ip);
 
     const result = await SessionService.validateSession(sessionToken, { userAgent, clientIp });
 

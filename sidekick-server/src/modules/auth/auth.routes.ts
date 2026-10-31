@@ -1,26 +1,26 @@
 import { Router } from "express";
 import { AuthController } from "./auth.controller.js";
 import { asyncHandler } from "../../utils/http/async-handler.js";
-import { createRateLimit, userAwareKey } from "../../middleware/rate-limit.middleware.js";
+import { clientIpKey, createRateLimit, userAwareKey } from "../../middleware/rate-limit.middleware.js";
 import { authenticator } from "../../middleware/authenticator.js";
 import { requireCsrf } from "../../middleware/csrf.middleware.js";
 
 const router = Router();
 
-const ipShield = () => createRateLimit({ windowMs: 60_000, limit: 300 });
+const ipShield = () => createRateLimit({ windowMs: 60_000, limit: 300, keyGenerator: clientIpKey });
 
 const userLimit = (windowMs: number, limit: number) =>
     createRateLimit({ windowMs, limit, keyGenerator: userAwareKey });
 
 router.get(
     "/google/login",
-    createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
+    createRateLimit({ windowMs: 10 * 60_000, limit: 10, keyGenerator: clientIpKey }),
     AuthController.googleAuthRedirect
 );
 
 router.post(
     "/google/callback",
-    createRateLimit({ windowMs: 10 * 60_000, limit: 10 }),
+    createRateLimit({ windowMs: 10 * 60_000, limit: 10, keyGenerator: clientIpKey }),
     asyncHandler(AuthController.handleGoogleCallback)
 );
 

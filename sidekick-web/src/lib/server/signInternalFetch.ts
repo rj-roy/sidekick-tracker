@@ -1,5 +1,6 @@
 import "server-only";
 import crypto from "crypto";
+import { apiUrl } from "./apiUrl";
 
 const sha256 = (value: string) => crypto.createHash("sha256").update(value).digest("hex");
 
@@ -21,7 +22,7 @@ export async function signInternalFetch(path: string, opts: InternalFetchOpts = 
         .update(canonical)
         .digest("hex");
 
-    return fetch(`${process.env.API_BASE}${path}`, {
+    return fetch(apiUrl(path), {
         method,
         headers: {
             "x-ts": ts,

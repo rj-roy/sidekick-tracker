@@ -39,7 +39,7 @@ function validateIp(input: string | null | undefined): {valid: boolean; ip: stri
 export async function getClientInfo(): Promise<{ ip: string; ua: string }> {
     const header = await headers();
 
-    const rawIp = header.get("x-forwarded-for")?.split(",")[0].trim() || header.get("x-real-ip") || "";
+    const rawIp = header.get("x-real-ip")?.trim() || header.get("x-forwarded-for")?.split(",")[0]?.trim() || "";
     const rawUa = header.get("user-agent") ?? "";
     const { ua } = validateUa(rawUa);
     const { ip } = validateIp(rawIp);

@@ -27,9 +27,7 @@ const isValidTrackingToken = (value: unknown): value is string =>
 
 const openContext = (req: Request): OpenContext => {
     const { userAgent } = validateUa(req.get("x-client-ua") || req.get("user-agent") || "");
-    const { clientIp } = validateIp(
-        req.get("x-client-ip") || req.get("x-forwarded-for") || req.ip || ""
-    );
+    const { clientIp } = validateIp(req.get("x-client-ip") || req.ip);
     const { os, browser, isMobile } = parseUa(userAgent === "unknown" ? "" : userAgent);
     return { userAgent, ip: clientIp, isMobile, os, browser };
 };

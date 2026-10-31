@@ -1,5 +1,5 @@
-export const API_BASE_URL = "http://localhost:3000";
-export const CLIENT_BASE_URL = "http://localhost:3000";
+export const API_BASE_URL = "https://sidekick-tracker-web.vercel.app";
+export const CLIENT_BASE_URL = "https://sidekick-tracker-web.vercel.app/";
 export const GMAIL_COMPOSE_URL = `https://mail.google.com/mail/u/0/#compose`;
 
 export const OPEN_SIGN_IN_MESSAGE = "OPEN_SIGN_IN";

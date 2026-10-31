@@ -4,6 +4,7 @@ import { statusHandler } from "../statusHandler";
 import { ApiResponse } from "@/types/apiTypes";
 import { getCookie, setCookie } from "../cookies";
 import { getClientInfo } from "./clientInfo";
+import { apiUrl } from "./apiUrl";
 
 type Opts = { method?: string; body?: unknown; headers?: Record<string, string>; redirectOnAuthError?: boolean };
 
@@ -31,7 +32,7 @@ export async function signedFetch<T>(path: string, opts: Opts = {}): Promise<Api
 
 
 
-  const res = await fetch(`${process.env.API_BASE}${path}`, {
+  const res = await fetch(apiUrl(path), {
     method,
     headers: {
       "Content-Type": "application/json",

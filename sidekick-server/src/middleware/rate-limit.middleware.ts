@@ -5,6 +5,7 @@ import type { Request, Response } from "express";
 import type { RedisReply } from "rate-limit-redis";
 import { ApiResponse } from "../utils/http/ApiRsponse.js";
 import { env } from "../config/env.js";
+import { validateIp } from "../utils/user/verifyUserInfo.js";
 
 type KeyFn = (req: Request) => string;
 
@@ -69,9 +70,21 @@ const getRedisStore = (): RedisStore | null => {
   return redisStore;
 };
 
-// composite key: ip:userId — distinct per authenticated user, resilient to IP-sharing
+const keyForIp = (value: string | undefined): string => {
+  const { clientIp } = validateIp(value ?? "");
+  return ipKeyGenerator(clientIp === "unknown" ? "anon" : clientIp);
+};
+
+export const clientIpKey: KeyFn = (req: Request): string =>
+  keyForIp(req.get("x-client-ip") || req.ip);
+
+export const publicIpKey: KeyFn = (req: Request): string =>
+  keyForIp(req.get("x-client-ip") || req.ip);
+
 export const userAwareKey: KeyFn = (req: Request): string =>
-  `${ipKeyGenerator(req.ip ?? "anon")}:${req.userId?.toHexString() ?? "anon"}`;
+  req.userId
+    ? `user:${req.userId.toHexString()}`
+    : keyForIp(req.get("x-client-ip") || req.ip);
 
 export const createRateLimit = ({ windowMs, limit, keyGenerator }: {
     windowMs: number;
