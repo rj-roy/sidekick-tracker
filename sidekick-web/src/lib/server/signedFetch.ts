@@ -10,7 +10,7 @@ type Opts = { method?: string; body?: unknown; headers?: Record<string, string>;
 
 const sha256 = (s: string) => crypto.createHash("sha256").update(s).digest("hex");
 
-export async function signedFetch<T>(path: string, opts: Opts = {}): Promise<ApiResponse<T>> {
+export async function signedFetch<T>(path: string, req?: Request, opts: Opts = {}): Promise<ApiResponse<T>> {
   const session = await getCookie("OG_L");
   const csrf = await getCookie("T_ls_");
 
@@ -22,7 +22,7 @@ export async function signedFetch<T>(path: string, opts: Opts = {}): Promise<Api
   const body = opts.body === undefined ? "" : JSON.stringify(opts.body);
   const ts = Date.now().toString();
   const nonce = crypto.randomBytes(16).toString("hex");
-  const { ip, ua } = await getClientInfo();
+  const { ip, ua } = await getClientInfo(req);
 
   const canonical = [method, path, ts, nonce, sha256(body)].join("\n");
   const sig = crypto

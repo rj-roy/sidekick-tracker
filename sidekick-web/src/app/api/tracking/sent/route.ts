@@ -21,7 +21,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, message: "Missing tracking token" }, { status: 400 });
     }
 
-    const res = await signedFetch("/tracking/sent", {
+    const res = await signedFetch("/tracking/sent", req, {
         method: "POST",
         body: {
             trackingToken: body.trackingToken,

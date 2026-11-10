@@ -12,7 +12,7 @@ const FALLBACK_GIF = Buffer.from(
 const pixelResponse = (body: Buffer) =>
     new Response(new Uint8Array(body), { status: 200, headers: PIXEL_HEADERS });
 
-export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
     const { id } = await ctx.params;
     const token = stripGifExtension(id ?? "");
     
@@ -24,7 +24,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     try {
         const res = await externalApiFetch(`/pixel/open/${token}`, {
             method: "GET"
-        });
+        }, req);
 
         if (!res.ok) return pixelResponse(FALLBACK_GIF);
         return pixelResponse(Buffer.from(await res.arrayBuffer()));

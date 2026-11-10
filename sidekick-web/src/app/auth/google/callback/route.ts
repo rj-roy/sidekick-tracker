@@ -25,7 +25,7 @@ export async function GET(req: Request) {
 
     const res = await signedFetch
         <{ user: Record<string, string>, sessionCookies: Record<string, string> }>
-        ('/auth/google/callback', {
+        ('/auth/google/callback', req, {
             method: "POST",
             body: {
                 paramsState,

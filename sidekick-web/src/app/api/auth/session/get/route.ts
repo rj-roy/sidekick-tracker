@@ -7,7 +7,7 @@ export async function GET(req: Request) {
         return NextResponse.json({ success: false, message: "unauthorized" }, { status: 401 });
     };
 
-    const res = await signedFetch("/auth/get/session");
+    const res = await signedFetch("/auth/get/session", req);
 
     return NextResponse.json(res, {
         status: res.success ? 201 : 401,

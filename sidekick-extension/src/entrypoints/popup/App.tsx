@@ -51,9 +51,9 @@ function App() {
 
           {
             session.status === 'authenticated' ?
-              <button className="rounded-md p-1.5 text-muted hover:bg-page hover:text-primary">
-                <Settings className="size-4" />
-              </button>
+              <a href="/tracked-mails" className="rounded-md p-1.5 text-muted hover:bg-page hover:text-primary">
+                <h3 className="text-primary hover:underline">Tracked Mails</h3>
+              </a>
               : <button
                 className="text-info font-bold hover:underline"
                 onClick={() => handleSignIn()}>

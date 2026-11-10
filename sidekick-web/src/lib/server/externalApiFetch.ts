@@ -10,7 +10,11 @@ type externalFetchOpts = {
     headers?: Record<string, string>;
 };
 
-export async function externalApiFetch(path: string, opts: externalFetchOpts = {}): Promise<Response> {
+export async function externalApiFetch(
+    path: string,
+    opts: externalFetchOpts = {},
+    request?: Request,
+): Promise<Response> {
     const method = (opts.method ?? "GET").toUpperCase();
     const ts = Date.now().toString();
     const nonce = crypto.randomBytes(16).toString("hex");
@@ -20,7 +24,7 @@ export async function externalApiFetch(path: string, opts: externalFetchOpts = {
         .update(canonical)
         .digest("hex");
 
-    const { ip, ua } = await getClientInfo();
+    const { ip, ua } = await getClientInfo(request);
 
     const resu = fetch(apiUrl(path), {
         method,
