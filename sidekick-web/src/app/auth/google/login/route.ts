@@ -3,8 +3,8 @@ import { setCookie } from "@/lib/cookies";
 import { AuthRes } from "@/types/authTypes";
 import { NextResponse } from "next/server";
 
-export async function GET() {
-  const res = await signedFetch('/auth/google/login');
+export async function GET(req: Request) {
+  const res = await signedFetch('/auth/google/login', req);
 
   const data = res.data as AuthRes;
 

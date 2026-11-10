@@ -5,7 +5,7 @@ import { PixelApi } from "./trackingApi";
 import { saveDraft } from "@/shared/utils/syncStore";
 
 export const activeTab = async () => {
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  const [tab] = await browser.tabs.query({ active: true, lastFocusedWindow: true });
   return tab;
 };
 

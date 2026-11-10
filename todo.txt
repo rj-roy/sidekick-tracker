@@ -15,3 +15,6 @@ todoExtension: {
 };
 
 //opened by, opened at, is frowarded and is it opened
+
+*** on tracking collections isMobile false always, isSelf false always, ip and useragent refering to the server ip and ua
+*** same session cookies can be use to another browser, that runs perfectly on each browser

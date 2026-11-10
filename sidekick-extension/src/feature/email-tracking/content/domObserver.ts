@@ -19,12 +19,38 @@ export const tokensFromRemoved = (removed: Node): Set<string> => {
     return tokens;
 };
 
-export const observeComposeRemoval = (onRemoved: (node: Node) => void): void => {
-    const observer = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-            mutation.removedNodes.forEach(onRemoved);
-        }
-    });
+export const whenBodyReady = (callback: () => void): void => {
+    if (document.body) {
+        callback();
+        return;
+    }
 
-    observer.observe(document.body, { childList: true, subtree: true });
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => {
+            if (document.body) callback();
+        }, { once: true });
+        return;
+    }
+
+    window.setTimeout(() => {
+        if (document.body) callback();
+    }, 0);
+};
+
+let observer: MutationObserver | null = null;
+
+export const observeComposeRemoval = (onRemoved: (node: Node) => void): void => {
+    if (observer) return;
+
+    whenBodyReady(() => {
+        if (observer || !document.body) return;
+
+        observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                mutation.removedNodes.forEach(onRemoved);
+            }
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    });
 };

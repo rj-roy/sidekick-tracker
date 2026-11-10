@@ -25,7 +25,7 @@ export async function GET(req: Request) {
 
     const res = await signedFetch
         <{ user: Record<string, string>, sessionCookies: Record<string, string> }>
-        ('/auth/google/callback', {
+        ('/auth/google/callback', req, {
             method: "POST",
             body: {
                 paramsState,
@@ -34,8 +34,6 @@ export async function GET(req: Request) {
                 o_bh_h: cookieValues.o_bh_h,
             },
         });
-
-        console.log(res);
 
     for (const name of cookieNames) {
         await deleteCookie(name);

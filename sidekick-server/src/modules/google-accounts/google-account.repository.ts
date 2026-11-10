@@ -109,6 +109,7 @@ export const GoogleAccountRepository = {
           updatedAt: now,
         },
       },
+      { returnDocument: "after" },
     );
   },
 

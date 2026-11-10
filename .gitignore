@@ -3,3 +3,12 @@ dist/
 .env
 /secrets
 ./iui
+
+# Ignore all markdown files except README
+*.md
+!README.md
+
+# Ignore todo files
+todo*
+TODO*
+*.todo

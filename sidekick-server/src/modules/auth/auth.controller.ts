@@ -37,7 +37,7 @@ export const AuthController = {
     },
 
     async handleGoogleCallback(req: Request, res: Response) {
-        const { clientIp } = validateIp(req.get("x-client-ip") || req.get("x-forwarded-for"));
+        const { clientIp } = validateIp(req.get("x-client-ip") || req.ip);
         const { userAgent } = validateUa(req.get('x-client-ua') || req.get("user-agent"));
 
         if (AuthFailureGuard.isLockedOut(clientIp)) {

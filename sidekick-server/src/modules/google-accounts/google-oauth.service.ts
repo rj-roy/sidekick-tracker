@@ -95,7 +95,7 @@ export const GoogleOAuthService = {
             },
         );
 
-        if (!updated?.acknowledged) {
+        if (!updated) {
             throw new ApiError(500, "Falied to authenticate google Account! Internal Server Error!");
         };
 

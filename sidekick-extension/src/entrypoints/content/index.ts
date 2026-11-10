@@ -10,14 +10,11 @@ declare global {
 };
 
 export default defineContentScript({
-  matches: ['<all_urls>'],
+  matches: ['https://mail.google.com/*'],
   runAt: 'document_start',
 
   main(ctx) {
     if (window.__sidekickContentStarted) return;
-    window.__sidekickContentStarted = true;
-
-    initGmailListeners();
 
     browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       switch (message?.type) {
@@ -30,5 +27,13 @@ export default defineContentScript({
           return;
       }
     });
+
+    window.__sidekickContentStarted = true;
+
+    try {
+      initGmailListeners();
+    } catch (error) {
+      console.error("[sidekick] content script initialization failed:", error);
+    }
   },
 });
