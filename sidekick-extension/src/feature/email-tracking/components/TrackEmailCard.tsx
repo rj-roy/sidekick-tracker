@@ -77,7 +77,7 @@ export default function TrackEmailCard() {
         <button
           onClick={() => void refresh()}
           disabled={isRefreshing}
-          className="rounded p-1 text-muted hover:bg-page hover:text-primary disabled:opacity-50"
+          className="rounded p-1 text-muted-foreground hover:bg-page hover:text-primary disabled:opacity-50"
           title="Re-check the open draft"
         >
           <RefreshCw className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
@@ -86,14 +86,14 @@ export default function TrackEmailCard() {
 
       <div className="p-3">
         {state.status === "checking" && (
-          <div className="flex items-center gap-2 text-[11px] text-muted">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
             <Loader2 className="size-3.5 animate-spin" />
             Looking for an open draft...
           </div>
         )}
 
         {state.status === "working" && (
-          <div className="flex items-center gap-2 text-[11px] text-muted">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
             <Loader2 className="size-3.5 animate-spin" />
             Adding the tracking pixel...
           </div>

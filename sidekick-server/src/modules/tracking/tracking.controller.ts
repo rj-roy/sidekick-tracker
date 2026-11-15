@@ -33,6 +33,16 @@ const openContext = (req: Request): OpenContext => {
 };
 
 export const TrackingController = {
+    async get(req: Request, res: Response) {
+        if (!req.userId) {
+            throw new ApiError(401, "Authentication required", "SESSION_INVALID");
+        }
+
+        const emails = await TrackingService.getTrackedEmails(req.userId);
+
+        return ApiResponse.success(res, "Tracked emails fetched", emails, 200);
+    },
+
     async markSent(req: Request, res: Response) {
         if (!req.userId) {
             throw new ApiError(401, "Authentication required", "SESSION_INVALID");

@@ -17,4 +17,6 @@ todoExtension: {
 //opened by, opened at, is frowarded and is it opened
 
 *** on tracking collections isMobile false always, isSelf false always, ip and useragent refering to the server ip and ua
-*** same session cookies can be use to another browser, that runs perfectly on each browser
+*** same session cookies can be use to another browser, that runs perfectly on each browser >>> for this bug rotate the session on every req to server
+
+>>> integrate the authomatic track witout clicking track this mail, if user allow automatic trakcing with a toggle button, 

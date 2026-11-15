@@ -6,11 +6,21 @@ import { getCookie, setCookie } from "../cookies";
 import { getClientInfo } from "./clientInfo";
 import { apiUrl } from "./apiUrl";
 
-type Opts = { method?: string; body?: unknown; headers?: Record<string, string>; redirectOnAuthError?: boolean };
+type Opts = {
+  method?: string;
+  body?: unknown;
+  headers?: Record<string, string>;
+  redirectOnAuthError?: boolean;
+};
 
-const sha256 = (s: string) => crypto.createHash("sha256").update(s).digest("hex");
+const sha256 = (s: string) =>
+  crypto.createHash("sha256").update(s).digest("hex");
 
-export async function signedFetch<T>(path: string, req?: Request, opts: Opts = {}): Promise<ApiResponse<T>> {
+export async function signedFetch<T>(
+  path: string,
+  req?: Request,
+  opts: Opts = {},
+): Promise<ApiResponse<T>> {
   const session = await getCookie("OG_L");
   const csrf = await getCookie("T_ls_");
 
@@ -29,8 +39,6 @@ export async function signedFetch<T>(path: string, req?: Request, opts: Opts = {
     .createHmac("sha256", process.env.INTERNAL_HMAC_SECRET!)
     .update(canonical)
     .digest("hex");
-
-
 
   const res = await fetch(apiUrl(path), {
     method,
@@ -55,5 +63,7 @@ export async function signedFetch<T>(path: string, req?: Request, opts: Opts = {
   if (rotatedSession) await setCookie("OG_L", rotatedSession);
   if (rotatedCsrf) await setCookie("T_ls_", rotatedCsrf);
 
-  return statusHandler<T>(res, { redirectOnAuthError: opts.redirectOnAuthError });
-};
+  return statusHandler<T>(res, {
+    redirectOnAuthError: opts.redirectOnAuthError,
+  });
+}

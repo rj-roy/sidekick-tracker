@@ -6,5 +6,5 @@ export type User = {
 };
 
 export type Session = {
-  demo: boolean
+  demo: boolean;
 };

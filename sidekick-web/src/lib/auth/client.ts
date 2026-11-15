@@ -11,7 +11,7 @@ const listeners = new Set<() => void>();
 function set(next: SessionState) {
   state = next;
   listeners.forEach((l) => l());
-};
+}
 
 async function load() {
   try {
@@ -24,24 +24,28 @@ async function load() {
     set({ data: json?.success ? json.data : null, isPending: false });
   } catch {
     set({ data: null, isPending: false });
-  };
-};
+  }
+}
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
   if (!started) {
     started = true;
     void load();
-  };
+  }
   return () => {
     listeners.delete(listener);
   };
-};
+}
 
 export const useSession = () =>
-  useSyncExternalStore(subscribe, () => state, () => PENDING);
+  useSyncExternalStore(
+    subscribe,
+    () => state,
+    () => PENDING,
+  );
 
 export async function refreshSession() {
-  set({ ...state, isPending: true }); 
+  set({ ...state, isPending: true });
   await load();
-};
+}
