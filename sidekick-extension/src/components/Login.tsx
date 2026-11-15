@@ -6,7 +6,7 @@ export default function Login({ handleSignIn }: { handleSignIn: () => void }) {
 
   return (
     <main className="p-4">
-      <div className="rounded border border-border bg-surface p-6 text-center">
+      <div className="rounded border border-border/40 bg-surface p-6 text-center">
         <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded bg-signal-soft">
           <Mail className="size-6 text-signal" />
         </div>

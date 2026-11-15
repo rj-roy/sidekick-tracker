@@ -68,7 +68,7 @@ export default function TrackedMailsView({ onBack, mailData }: { onBack: () => v
   const isLoading = !Array.isArray(mailData);
 
   return (
-    <div className="w-[360px] bg-surface rounded-sm  border border-border overflow-hidden flex flex-col text-foreground">
+    <div className="w-[360px] bg-surface rounded-sm  border border-border/40 overflow-hidden flex flex-col text-foreground">
       <Header onHome={onBack} />
 
       <div className="p-4 space-y-3.5 bg-surface">
@@ -90,8 +90,8 @@ export default function TrackedMailsView({ onBack, mailData }: { onBack: () => v
           </div>
         </div>
 
-        <div className="bg-surface rounded border border-border p-3 ">
-          <div className="flex items-center space-x-3 pb-3 border-b border-border">
+        <div className="bg-surface rounded border border-border/40 p-3 ">
+          <div className="flex items-center space-x-3 pb-3 border-b border-border/40">
             <div className="w-10 h-10 rounded-full bg-success-soft flex items-center justify-center shrink-0">
               <div className="w-7 h-7 rounded-full bg-success flex items-center justify-center text-white ">                <Check className="w-4 h-4" />
               </div>
@@ -111,12 +111,12 @@ export default function TrackedMailsView({ onBack, mailData }: { onBack: () => v
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-3">
-            <div className="bg-neutral-50 rounded-sm p-2 text-center border border-border">
+            <div className="bg-neutral-50 rounded-sm p-2 text-center border border-border/40">
               <span className="block text-[11px] font-medium text-muted-foreground">Opened</span>
               <span className="block text-[18px] font-bold text-success leading-tight my-0.5">{openedCount}</span>
               <span className="block text-[10px] text-muted-foreground">Total</span>
             </div>
-            <div className="bg-neutral-50 rounded-sm p-2 text-center border border-border">
+            <div className="bg-neutral-50 rounded-sm p-2 text-center border border-border/40">
               <span className="block text-[11px] font-medium text-muted-foreground">Tracked</span>
               <span className="block text-[18px] font-bold text-primary leading-tight my-0.5">{deliveredCount}</span>
               <span className="block text-[10px] text-muted-foreground">Total</span>
@@ -139,7 +139,7 @@ export default function TrackedMailsView({ onBack, mailData }: { onBack: () => v
               {emails.map((email) => {
                 const styles = STATUS_STYLES[email.status];
                 return (
-                  <div key={email.id} className="flex items-center justify-between p-2.5 rounded-sm border border-border bg-surface hover:bg-neutral-50 transition-colors">
+                  <div key={email.id} className="flex items-center justify-between p-2.5 rounded-sm border border-border/40 bg-surface hover:bg-neutral-50 transition-colors">
                     <div className="flex items-start space-x-2.5 min-w-0 pr-2">
                       <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${styles.dot}`}></span>
                       <div className="truncate">

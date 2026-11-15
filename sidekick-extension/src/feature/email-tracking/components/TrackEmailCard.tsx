@@ -70,8 +70,8 @@ export default function TrackEmailCard() {
   };
 
   return (
-    <div className="rounded-sm border border-border bg-surface">
-      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+    <div className="rounded-sm border border-border/40 bg-surface">
+      <div className="flex items-center justify-between border-b border-border/40 px-3 py-2">
         <h3 className="text-[12px] font-semibold">Track this email</h3>
 
         <button

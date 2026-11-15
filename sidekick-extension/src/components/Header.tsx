@@ -15,7 +15,7 @@ export default function Header({
   showBack?: boolean;
 }) {
   return (
-    <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-surface">
+    <header className="flex items-center justify-between px-4 py-3 border-b border-border/40 bg-surface">
       <div className="flex items-center space-x-2">
         {showBack && onBack && (
           <button
