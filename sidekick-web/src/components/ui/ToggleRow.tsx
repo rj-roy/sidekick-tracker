@@ -11,8 +11,8 @@ export default function ToggleRow({ title, description, enabled, onChange }: Tog
   return (
     <div className="flex items-start justify-between gap-6">
       <div>
-        <p className="text-sm font-medium text-slate-800">{title}</p>
-        <p className="mt-1 text-xs text-slate-400">{description}</p>
+        <p className="text-sm font-medium text-headline">{title}</p>
+        <p className="mt-1 text-xs text-caption">{description}</p>
       </div>
       <Toggle enabled={enabled} onChange={onChange} label={title} />
     </div>

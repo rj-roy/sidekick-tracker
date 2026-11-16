@@ -29,7 +29,7 @@ export default function NotificationsSection() {
       id="notifications"
       title="Notifications"
       subtitle="Select how and when you want to receive tracking updates."
-      action={<SlidersHorizontal className="h-5 w-5 text-slate-400" />}
+      action={<SlidersHorizontal className="h-5 w-5 text-caption" />}
     >
       <div className="space-y-6">
         {ROWS.map((row) => (

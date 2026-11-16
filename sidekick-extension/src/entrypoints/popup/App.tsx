@@ -86,15 +86,15 @@ function App() {
 
   return (
     <>
-      <div className="w-[360px] bg-page text-primary">
+      <div className="w-[360px] bg-background text-foreground">
         <Header showSettings={session.status === "authenticated"} onHome={() => setView("home")}>
           {
             session.status === 'authenticated' ?
-              <button onClick={() => setView("tracked")} className="rounded-sm px-2 py-1 text-[10px] font-sm text-info hover:bg-page hover:underline">
+              <button onClick={() => setView("tracked")} className="rounded-md px-2 py-1 text-[10px] font-medium text-link hover:bg-muted hover:underline">
                 Tracked Mails
               </button>
-              : <button
-                className="text-info font-bold hover:underline"
+              :               <button
+                className="text-link font-semibold hover:underline"
                 onClick={() => handleSignIn()}>
                 Sign In
               </button>

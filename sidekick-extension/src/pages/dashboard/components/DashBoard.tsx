@@ -2,13 +2,13 @@ import type { User } from "@/shared/types/AuthType";
 import { CircleHelp, LogOut } from "lucide-react";
 import TrackEmailCard from "@/feature/email-tracking/components/TrackEmailCard";
 
-export default function Dashboard({user, handleLogOut }: { user:User , handleLogOut: () => void }) {
+export default function Dashboard({ user, handleLogOut }: { user: User, handleLogOut: () => void }) {
     return (
         <div className="p-4">
             <TrackEmailCard />
 
             <div className="mt-3 flex justify-center">
-                <button className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary">
+                <button className="flex items-center gap-1 text-[10px] text-caption hover:text-foreground">
                     <CircleHelp className="size-3" />
                     How it works
                 </button>
@@ -17,7 +17,7 @@ export default function Dashboard({user, handleLogOut }: { user:User , handleLog
             <div className="mt-3 flex justify-center">
                 <button
                     onClick={handleLogOut}
-                    className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary"
+                    className="flex items-center gap-1 text-[10px] text-caption hover:text-foreground"
                 >
                     <LogOut className="size-3" />
                     Log out

@@ -10,7 +10,7 @@ const PROVIDERS = [
     id: 'google',
     name: 'Google Workspace / Gmail',
     icon: Mail,
-    iconClass: 'bg-red-100 text-red-500',
+    iconClass: 'bg-muted text-primary',
     connectedMeta: 'jibon@gmail.com • Synced 2 mins ago',
     idleMeta: 'Connect your Gmail workspace to track outgoing mail',
     connected: true,
@@ -19,7 +19,7 @@ const PROVIDERS = [
     id: 'outlook',
     name: 'Microsoft Outlook 365',
     icon: Inbox,
-    iconClass: 'bg-indigo-100 text-indigo-500',
+    iconClass: 'bg-muted text-secondary',
     connectedMeta: 'jibon@outlook.com • Synced just now',
     idleMeta: 'Connect Outlook or Exchange mailbox to track outgoing mail',
     connected: false,
@@ -38,7 +38,7 @@ export default function ConnectedAccountsSection() {
       title="Connected Accounts"
       subtitle="Manage third-party email providers connected to TrackMail."
       action={
-        <button className="flex items-center gap-1.5 rounded-sm bg-indigo-100 px-3.5 py-2 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-200">
+        <button className="flex items-center gap-1.5 rounded-md bg-secondary px-3.5 py-2 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary">
           <Plus className="h-3.5 w-3.5" />
           Add Provider
         </button>
@@ -50,22 +50,22 @@ export default function ConnectedAccountsSection() {
           return (
             <div
               key={provider.id}
-              className="flex flex-col gap-4 rounded-sm bg-indigo-50/60 p-4 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-4 rounded-md border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex items-center gap-4">
-                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-sm ${provider.iconClass}`}>
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${provider.iconClass}`}>
                   <Icon className="h-5 w-5" />
                 </span>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-semibold text-slate-800">{provider.name}</p>
+                    <p className="text-sm font-semibold text-headline">{provider.name}</p>
                     {provider.connected ? (
                       <Badge variant="teal" dot>Connected</Badge>
                     ) : (
                       <Badge variant="gray">Inactive</Badge>
                     )}
                   </div>
-                  <p className="mt-0.5 text-xs text-slate-400">
+                  <p className="mt-0.5 text-xs text-caption">
                     {provider.connected ? provider.connectedMeta : provider.idleMeta}
                   </p>
                 </div>
@@ -74,14 +74,14 @@ export default function ConnectedAccountsSection() {
               {provider.connected ? (
                 <button
                   onClick={() => toggleProvider(provider.id)}
-                  className="self-start text-sm font-medium text-slate-500 transition-colors hover:text-red-500 sm:self-auto"
+                  className="self-start text-sm font-medium text-caption transition-colors hover:text-foreground sm:self-auto"
                 >
                   Disconnect
                 </button>
               ) : (
                 <button
                   onClick={() => toggleProvider(provider.id)}
-                  className="flex items-center gap-2 self-start rounded-sm bg-white px-4 py-2 text-sm font-semibold text-slate-700  transition-colors hover:bg-slate-50 sm:self-auto"
+                  className="flex items-center gap-2 self-start rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted sm:self-auto"
                 >
                   <Link2 className="h-4 w-4" />
                   Connect

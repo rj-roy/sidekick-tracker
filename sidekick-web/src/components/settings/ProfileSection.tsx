@@ -5,9 +5,9 @@ import { ChangeEvent, useState } from 'react';
 import Badge from '../ui/Badge';
 import SettingsSection from '../ui/SettingsSection';
 
-const LABEL = 'mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400';
+const LABEL = 'mb-1 block text-[11px] font-semibold uppercase tracking-wider text-caption';
 const INPUT =
-  'w-full border-b border-slate-200 bg-transparent pb-2 pt-1 text-sm text-slate-700 outline-none transition-colors focus:border-red-400';
+  'w-full border-b border-border bg-transparent pb-2 pt-1 text-sm text-foreground outline-none transition-colors focus:border-ring';
 
 const TIMEZONES = ['Asia/Dhaka (GMT+6)', 'UTC (GMT+0)', 'America/New_York (GMT-5)', 'Europe/London (GMT+1)', 'Asia/Tokyo (GMT+9)'];
 const LANGUAGES = ['English (US)', 'English (UK)', 'Deutsch', 'Français', '日本語'];
@@ -33,31 +33,29 @@ export default function ProfileSection() {
       subtitle="Update your photo and personal details."
       action={<Badge variant="indigo">ID: TM-88491</Badge>}
     >
-      {/* Avatar + upload */}
       <div className="flex flex-wrap items-center gap-5">
         <div className="relative">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-red-500 text-lg font-bold text-white ring-4 ring-red-100">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground ring-4 ring-muted">
             J
           </span>
-          <span className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-white bg-teal-500" />
+          <span className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-surface bg-secondary" />
         </div>
         <div>
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 rounded-sm bg-indigo-100 px-4 py-2 text-sm font-semibold text-indigo-700 transition-colors hover:bg-indigo-200">
+            <button className="flex items-center gap-2 rounded-md bg-muted px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted">
               <Upload className="h-4 w-4" />
               Upload new
             </button>
-            <button className="text-sm font-medium text-slate-500 transition-colors hover:text-red-500">
+            <button className="text-sm font-medium text-caption transition-colors hover:text-foreground">
               Remove
             </button>
           </div>
-          <p className="mt-2 text-xs text-slate-400">
+          <p className="mt-2 text-xs text-caption">
             JPG, GIF or PNG. Max size 2MB. Recommended dimensions 256×256px.
           </p>
         </div>
       </div>
 
-      {/* Form grid */}
       <div className="mt-8 grid grid-cols-1 gap-x-10 gap-y-6 md:grid-cols-2">
         <div>
           <label htmlFor="fullName" className={LABEL}>Full Name</label>
@@ -81,7 +79,7 @@ export default function ProfileSection() {
             <select id="timezone" className={`${INPUT} appearance-none pr-8`} value={form.timezone} onChange={update('timezone')}>
               {TIMEZONES.map((tz) => <option key={tz}>{tz}</option>)}
             </select>
-            <ChevronDown className="pointer-events-none absolute right-1 top-1.5 h-4 w-4 text-slate-400" />
+            <ChevronDown className="pointer-events-none absolute right-1 top-1.5 h-4 w-4 text-caption" />
           </div>
         </div>
         <div>
@@ -90,17 +88,16 @@ export default function ProfileSection() {
             <select id="language" className={`${INPUT} appearance-none pr-8`} value={form.language} onChange={update('language')}>
               {LANGUAGES.map((lang) => <option key={lang}>{lang}</option>)}
             </select>
-            <ChevronDown className="pointer-events-none absolute right-1 top-1.5 h-4 w-4 text-slate-400" />
+            <ChevronDown className="pointer-events-none absolute right-1 top-1.5 h-4 w-4 text-caption" />
           </div>
         </div>
       </div>
 
-      {/* Actions */}
       <div className="mt-8 flex items-center justify-end gap-4">
-        <button className="text-sm font-medium text-slate-500 transition-colors hover:text-slate-700">
+        <button className="text-sm font-medium text-caption transition-colors hover:text-foreground">
           Cancel
         </button>
-        <button className="flex items-center gap-2 rounded-sm bg-red-500 px-5 py-2.5 text-sm font-semibold text-white  transition-colors hover:bg-red-600">
+        <button className="flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary">
           <Check className="h-4 w-4" />
           Save Changes
         </button>

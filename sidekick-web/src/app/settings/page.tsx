@@ -11,18 +11,16 @@ export const metadata = { title: 'Settings · TrackMail' };
 
 export default function SettingsPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-[#f4f4f9] text-slate-800 antialiased">
+    <div className="flex min-h-screen flex-col bg-background text-foreground antialiased">
       <SettingsHeader />
 
-      <main className="mx-auto w-full max-w-[1400px] flex-1 px-6 py-10 lg:px-10">
+      <div className="mx-auto w-full max-w-[1400px] flex-1 px-6 py-10 lg:px-10">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[230px_1fr]">
-          {/* Left column */}
           <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
             <SettingsSidebar />
             <PixelIntegrityCard />
           </div>
 
-          {/* Right column */}
           <div className="space-y-8">
             <ProfileSection />
             <TrackingPreferencesSection />
@@ -31,7 +29,7 @@ export default function SettingsPage() {
             <DangerZoneSection />
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

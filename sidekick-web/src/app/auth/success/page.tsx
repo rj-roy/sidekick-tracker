@@ -5,7 +5,7 @@ export default function AuthSuccess() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-page flex items-center justify-center text-secondary">
+        <div className="min-h-screen bg-background flex items-center justify-center text-caption">
           Verifying session...
         </div>
       }

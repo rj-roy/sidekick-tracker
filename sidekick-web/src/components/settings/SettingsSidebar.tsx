@@ -16,7 +16,7 @@ export default function SettingsSidebar() {
   const [activeId, setActiveId] = useState('profile');
 
   return (
-    <nav className="rounded-md border border-slate-100 bg-white p-3 ">
+    <nav className="rounded-md border border-border bg-surface p-3">
       <ul className="space-y-1">
         {MENU.map(({ id, label, icon: Icon }) => {
           const active = activeId === id;
@@ -25,11 +25,11 @@ export default function SettingsSidebar() {
               <a
                 href={`#${id}`}
                 onClick={() => setActiveId(id)}
-                className={`flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-colors ${
-                  active ? 'bg-red-100/80 text-red-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                  active ? 'bg-muted text-foreground' : 'text-caption hover:bg-muted hover:text-foreground'
                 }`}
               >
-                <Icon className={`h-4 w-4 ${active ? 'text-red-500' : 'text-slate-400'}`} />
+                <Icon className={`h-4 w-4 ${active ? 'text-foreground' : 'text-caption'}`} />
                 {label}
               </a>
             </li>
@@ -37,12 +37,12 @@ export default function SettingsSidebar() {
         })}
       </ul>
 
-      <div className="my-3 border-t border-slate-100" />
+      <div className="my-3 border-t border-border" />
 
       <a
         href="#danger"
         onClick={() => setActiveId('danger')}
-        className="flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
+        className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-muted"
       >
         <AlertTriangle className="h-4 w-4" />
         Danger Zone
