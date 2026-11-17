@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ArrowLeft, Mail, Settings } from "lucide-react";
+import { ArrowLeft, Settings } from "lucide-react";
 
 export default function Header({
   children,
@@ -33,9 +33,7 @@ export default function Header({
           title="Home"
           aria-label="Home"
         >
-          <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
-            <Mail className="w-4 h-4 text-primary-foreground" />
-          </div>
+          <img src="/icon/32.png" alt="Sidekick" className="w-7 h-7 rounded-md object-contain" />
           <span className="font-semibold text-[14px] tracking-tight text-headline">
             SideKick<sup className="ml-0.5 text-[9px] font-medium text-caption">v0.1.2</sup>
           </span>

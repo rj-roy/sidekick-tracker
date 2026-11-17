@@ -1,6 +1,7 @@
 'use client';
 
-import { ChevronDown, Mail } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import ThemeSwitch from '@/ui/ThemeSwitch';
@@ -14,9 +15,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 border-b border-border bg-surface">
       <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-6 lg:px-10">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Mail className="h-4 w-4" />
-          </span>
+          <Image src="/favicon.ico" alt="TrackMail" width={32} height={32} className="h-8 w-8 rounded-md object-contain" />
           <span className="text-lg font-semibold text-headline">TrackMail</span>
         </Link>
 

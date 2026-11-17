@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
+import Link from "next/link";
 
 export default function AuthSuccessContent() {
   const searchParams = useSearchParams();
@@ -33,8 +34,8 @@ export default function AuthSuccessContent() {
         </div>
 
         <div className="mt-8 space-y-3">
-          <button className="w-full bg-primary hover:bg-primary text-primary-foreground font-medium py-2.5 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-surface">
-            Go to Dashboard
+          <button className="w-full bg-primary hover:bg-primary font-medium py-2.5 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-surface">
+          <Link className="text-white" href={'/dashboard'}>Go To Dashboard</Link>
           </button>
 
           <div className="flex items-center justify-center gap-4 pt-2">

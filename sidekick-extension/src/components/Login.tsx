@@ -1,4 +1,3 @@
-import { Mail } from "lucide-react";
 import { useState } from "react";
 
 export default function Login({ handleSignIn }: { handleSignIn: () => void }) {
@@ -7,9 +6,9 @@ export default function Login({ handleSignIn }: { handleSignIn: () => void }) {
   return (
     <main className="p-4">
       <div className="card p-6 text-center">
-        <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-md bg-muted">
-          <Mail className="size-6 text-primary" />
-        </div>
+          <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-md bg-muted">
+            <img src="/icon/48.png" alt="Sidekick" className="size-6 rounded-md object-contain" />
+          </div>
 
         <h2 className="text-[14px] font-semibold text-headline">
           Sign in to start tracking
