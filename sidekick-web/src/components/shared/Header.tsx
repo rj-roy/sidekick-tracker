@@ -5,10 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Mail, Menu, X, User, ChevronDown, Sun } from "lucide-react";
 import ThemeSwitch from "@/ui/ThemeSwitch";
+import { useSession } from "@/lib/auth/auth.client";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+
+  const session = useSession();
+  console.log(session);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-surface px-4 py-0 sm:px-8">
@@ -39,18 +43,20 @@ export default function Header() {
           ].map((item) => {
             const active = pathname === item.href;
             return (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`relative rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {item.label}
-                {active && (
-                  <div className="mx-auto mt-0.5 h-0.5 w-full rounded-md bg-primary" />
-                )}
-              </Link>
+               <Link
+                 key={item.label}
+                 href={item.href}
+                 className={`group relative rounded-md px-3 py-2 text-sm font-medium transition-colors hover:text-primary ${
+                   active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                 }`}
+               >
+                 {item.label}
+                 <div
+                   className={`mx-auto mt-0.5 h-0.5 w-full rounded-md bg-primary transition-opacity ${
+                     active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                   }`}
+                 />
+               </Link>
             );
           })}
         </nav>

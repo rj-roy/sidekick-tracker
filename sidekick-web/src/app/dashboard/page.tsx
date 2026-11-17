@@ -13,6 +13,7 @@ import {
   Activity,
   User,
 } from "lucide-react";
+import { useSession } from "@/lib/auth/auth.client";
 
 type TrackedEmail = {
   _id?: string;
@@ -101,36 +102,13 @@ function Sparkline() {
 }
 
 export default function TrackMailDashboard() {
-  const [session, setSession] = useState<{ user?: { name?: string } } | null>(
-    null,
-  );
-  const [sessionLoading, setSessionLoading] = useState(true);
   const [emails, setEmails] = useState<TrackedEmail[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/auth/session/browser", {
-      credentials: "include",
-      cache: "no-store",
-    })
-      .then((r) => r.json())
-      .then((json) => {
-        if (!cancelled) setSession(json?.success ? json.data : null);
-      })
-      .catch(() => {
-        if (!cancelled) setSession(null);
-      })
-      .finally(() => {
-        if (!cancelled) setSessionLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const session = useSession();
 
   useEffect(() => {
-    if (sessionLoading || !session) return;
+    if (session.isPending || !session.data) return;
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
@@ -141,16 +119,16 @@ export default function TrackMailDashboard() {
           setEmails(json.data);
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [session, sessionLoading]);
+  }, [session]);
 
-  if (sessionLoading) {
+  if (session.isPending) {
     return <Loading />;
   }
 

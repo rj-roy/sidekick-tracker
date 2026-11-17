@@ -1,4 +1,4 @@
-import { Session, User } from "./sessionTypes";
+import { User } from "./sessionTypes";
 
 export interface AuthRes {
   url: string;
@@ -7,15 +7,7 @@ export interface AuthRes {
     o_bh_h: string;
   };
 }
-
 export interface SessionState {
   isPending: boolean;
-  data: {
-    success: boolean;
-    message: string;
-    data: {
-      user: User;
-      session: Session;
-    };
-  } | null;
+  data: { user: User } | null;
 }

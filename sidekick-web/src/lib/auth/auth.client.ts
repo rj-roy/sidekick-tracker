@@ -15,7 +15,7 @@ function set(next: SessionState) {
 
 async function load() {
   try {
-    const res = await fetch("/api/auth/session/get", {
+    const res = await fetch("/api/auth/session/browser", {
       method: "GET",
       credentials: "include",
       cache: "no-store",

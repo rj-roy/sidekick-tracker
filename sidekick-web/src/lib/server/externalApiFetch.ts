@@ -1,7 +1,7 @@
 import "server-only";
 import crypto from "crypto";
-import { getClientInfo } from "./clientInfo";
-import { apiUrl } from "./apiUrl";
+import { getClientInfo } from "../../utils/clientInfo";
+import { apiUrl } from "./api/apiUrl";
 
 const sha256 = (value: string) =>
   crypto.createHash("sha256").update(value).digest("hex");

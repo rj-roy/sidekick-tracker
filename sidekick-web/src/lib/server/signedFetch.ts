@@ -3,8 +3,8 @@ import crypto from "crypto";
 import { statusHandler } from "../statusHandler";
 import { ApiResponse } from "@/types/apiTypes";
 import { getCookie, setCookie } from "../cookies";
-import { getClientInfo } from "./clientInfo";
-import { apiUrl } from "./apiUrl";
+import { getClientInfo } from "../../utils/clientInfo";
+import { apiUrl } from "./api/apiUrl";
 
 type Opts = {
   method?: string;

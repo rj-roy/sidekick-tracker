@@ -6,10 +6,12 @@ import ProfileSection from '@/components/settings/ProfileSection';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import SettingsSidebar from '@/components/settings/SettingsSidebar';
 import TrackingPreferencesSection from '@/components/settings/TrackingPreferencesSection';
+import { getSession } from '@/lib/auth/auth.server';
 
 export const metadata = { title: 'Settings · TrackMail' };
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const session = await getSession();
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground antialiased">
       <SettingsHeader />
