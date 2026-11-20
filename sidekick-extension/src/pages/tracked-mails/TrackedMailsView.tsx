@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, Check, ExternalLink, HelpCircle } from "lucide-react";
 import Header from "../../components/Header";
 
-type EmailStatus = "Opened" | "Delivered";
+type EmailStatus = "Opened" | "Sent";
 
 interface RecentEmail {
   id: string;
@@ -25,7 +25,7 @@ interface TrackedMail {
 
 const STATUS_STYLES: Record<EmailStatus, { dot: string; badge: string }> = {
   Opened: { dot: "bg-primary", badge: "bg-muted text-primary" },
-  Delivered: { dot: "bg-secondary", badge: "bg-muted text-secondary" },
+  Sent: { dot: "bg-secondary", badge: "bg-muted text-secondary" },
 };
 
 const formatTimeAgo = (value: string | Date | undefined): string => {
@@ -55,7 +55,7 @@ const toRecentEmails = (mailData: unknown): RecentEmail[] => {
       subject: mail.subject?.trim() || "(no subject)",
       recipient,
       timeAgo: formatTimeAgo(mail.sentAt ?? mail.createdAt),
-      status: opened ? "Opened" : "Delivered",
+      status: opened ? "Opened" : "Sent",
     };
   });
 };

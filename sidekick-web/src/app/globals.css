@@ -100,7 +100,7 @@
   --foreground: #1f2328;
   /* fg default */
 
-  --surface: #f6f8fa;
+  --surface: #ffffff;
   /* canvas subtle – cards, headers */
   --muted: #eff2f5;
   /* inputs bg / neutral muted */
@@ -147,7 +147,7 @@
   --foreground: #f0f6fc;
   /* fg default */
 
-  --surface: #151b23;
+  --surface: #0d1117;
   /* canvas subtle */
   --muted: #212830;
   /* neutral muted */

@@ -1,18 +1,20 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Loading from "@/components/shared/Loading";
 import {
   Mail,
   CheckCircle2,
   Send,
-  Calendar,
   Users,
   ArrowRight,
   ArrowUp,
   Activity,
   User,
+  ChevronDown,
 } from "lucide-react";
+import Link from "next/link";
 import { useSession } from "@/lib/auth/auth.client";
 
 type TrackedEmail = {
@@ -62,7 +64,7 @@ function StatusBadge({ status }: { status: string }) {
       text: "text-secondary",
       bg: "bg-muted",
     },
-    Delivered: {
+    Sent: {
       dot: "bg-primary",
       text: "text-primary",
       bg: "bg-muted",
@@ -101,11 +103,42 @@ function Sparkline() {
   );
 }
 
+function filterCutoff(timeline: string | null): number | null {
+  const value = (timeline || "").trim().toLowerCase();
+  if (value === "lifetime") return null;
+  let days = 7;
+  if (value === "30d" || value === "30days" || value === "30") days = 30;
+  else if (value === "90d" || value === "90days" || value === "90") days = 90;
+  else if (
+    value === "7d" ||
+    value === "1w" ||
+    value === "1week" ||
+    value === "week" ||
+    value === "1 week" ||
+    value === ""
+  )
+    days = 7;
+  return Date.now() - days * 24 * 60 * 60 * 1000;
+}
+
 export default function TrackMailDashboard() {
   const [emails, setEmails] = useState<TrackedEmail[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const timeline = searchParams.get("timeline") || "7d";
+
   const session = useSession();
+
+  const filteredEmails = useMemo(() => {
+    const cutoff = filterCutoff(timeline);
+    if (cutoff === null) return emails;
+    return emails.filter((e) => {
+      const d = new Date(e.sentAt || e.createdAt || "");
+      return !Number.isNaN(d.getTime()) && d.getTime() >= cutoff;
+    });
+  }, [emails, timeline]);
 
   useEffect(() => {
     if (session.isPending || !session.data) return;
@@ -142,13 +175,13 @@ export default function TrackMailDashboard() {
     );
   }
 
-  const total = emails.length;
-  const opened = emails.filter(
+  const total = filteredEmails.length;
+  const opened = filteredEmails.filter(
     (e) => e.opened === true || e.status === "opened",
   ).length;
   const rate = total ? Math.round((opened / total) * 100) : 0;
 
-  const delivered = total - opened;
+  const delivered = total;
   const STATS = [
     {
       label: "Emails Tracked",
@@ -161,7 +194,7 @@ export default function TrackMailDashboard() {
       iconColor: "text-primary",
     },
     {
-      label: "Delivered",
+      label: "Sent",
       value: String(delivered),
       badge: `${total ? Math.round((delivered / total) * 100) : 0}% Rate`,
       badgeColor: "bg-muted text-secondary",
@@ -182,7 +215,7 @@ export default function TrackMailDashboard() {
     },
   ];
 
-  const EMAIL_ACTIVITY = emails.slice(0, 5).map((e) => {
+  const EMAIL_ACTIVITY = filteredEmails.slice(0, 5).map((e) => {
     const recipients = Array.isArray(e.recipient) ? e.recipient : [];
     const recipient = recipients.length
       ? recipients.join(", ")
@@ -193,9 +226,8 @@ export default function TrackMailDashboard() {
     return {
       subject: e.subject || "(no subject)",
       recipient,
-      status: isOpened ? "Opened" : "Delivered",
+      status: isOpened ? "Opened" : "Sent",
       opened: isOpened ? timeAgo(e.lastOpenedAt || e.sentAt) : "–",
-      clicked: "–",
       date: fmtDate(e.sentAt || e.createdAt),
       icon: Mail,
     };
@@ -203,7 +235,7 @@ export default function TrackMailDashboard() {
 
   const counts: Record<string, { name: string; count: number; opens: number }> =
     {};
-  emails.forEach((e) => {
+  filteredEmails.forEach((e) => {
     const recipients = Array.isArray(e.recipient) ? e.recipient : [];
     const key = recipients.length ? recipients[0] : "Unknown";
     if (!counts[key]) counts[key] = { name: key, count: 0, opens: 0 };
@@ -231,16 +263,33 @@ export default function TrackMailDashboard() {
       <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-8 sm:py-8">
         <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-headline">Dashboard</h1>
             <p className="mt-1 text-sm text-caption">
               Overview of your email tracking activity
             </p>
           </div>
-          <button className="flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2.5 text-sm font-medium text-body hover:bg-muted transition-colors">
-            <Calendar className="h-4 w-4 text-caption" />
-            Lifetime
-            <span className="text-caption">▾</span>
-          </button>
+           <div className="relative">
+             <select
+               value={timeline}
+               onChange={(e) => {
+                 const value = e.target.value;
+                 const params = new URLSearchParams(searchParams.toString());
+                 if (value) params.set("timeline", value);
+                 else params.delete("timeline");
+                 router.replace(
+                   params.toString()
+                     ? `/dashboard?${params.toString()}`
+                     : "/dashboard",
+                 );
+               }}
+               className="appearance-none rounded-md border border-border bg-surface py-2.5 pl-4 pr-10 text-sm font-medium text-body hover:bg-muted transition-colors"
+             >
+               <option value="7d">1 week</option>
+               <option value="30d">30 days</option>
+               <option value="90d">90 days</option>
+               <option value="lifetime">Lifetime</option>
+             </select>
+             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-caption" />
+           </div>
         </div>
 
         <div className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -315,7 +364,7 @@ export default function TrackMailDashboard() {
                 </p>
               </div>
               <span className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1 text-xs font-medium text-caption">
-                <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                <span className="h-2 w-2 rounded-full bg-primary bg-red-500 animate-pulse" />
                 Live Stream
               </span>
             </div>
@@ -327,10 +376,9 @@ export default function TrackMailDashboard() {
                     {[
                       "SUBJECT",
                       "RECIPIENT",
-                      "STATUS",
-                      "OPENED",
-                      "CLICKED",
-                      "DATE",
+                       "STATUS",
+                       "OPENED",
+                       "DATE",
                     ].map((h) => (
                       <th
                         key={h}
@@ -367,9 +415,6 @@ export default function TrackMailDashboard() {
                           {row.opened}
                         </td>
                         <td className="px-2 py-3.5 text-caption whitespace-nowrap">
-                          {row.clicked}
-                        </td>
-                        <td className="px-2 py-3.5 text-caption whitespace-nowrap">
                           {row.date}
                         </td>
                       </tr>
@@ -383,12 +428,15 @@ export default function TrackMailDashboard() {
               <p className="text-xs text-caption">
                 {loading
                   ? "Loading..."
-                  : `Showing latest ${Math.min(5, emails.length)} of ${emails.length} sent messages`}
+                   : `Showing latest ${Math.min(5, filteredEmails.length)} of ${filteredEmails.length} sent messages`}
               </p>
-              <button className="flex items-center gap-1 text-sm font-medium text-primary hover:text-secondary transition-colors">
+              <Link
+                href="/emails"
+                className="flex items-center gap-1 text-sm font-medium text-primary hover:text-secondary transition-colors"
+              >
                 View all emails
                 <ArrowRight className="h-4 w-4" />
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -430,10 +478,10 @@ export default function TrackMailDashboard() {
               <p className="text-xs text-caption">
                 Ranked by opens & clicks
               </p>
-              <button className="flex items-center gap-1 text-sm font-medium text-primary hover:text-secondary transition-colors">
+              {/* <button className="flex items-center gap-1 text-sm font-medium text-primary hover:text-secondary transition-colors">
                 View all contacts
                 <ArrowRight className="h-4 w-4" />
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

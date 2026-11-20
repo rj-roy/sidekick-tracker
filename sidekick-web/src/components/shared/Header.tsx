@@ -15,6 +15,7 @@ export default function Header() {
 
   const navItems = session.data?.user ? [
     { label: "Dashboard", href: "/dashboard" },
+    { label: "Emails", href: "/emails" },
     { label: "Settings", href: "/settings" },
     { label: "Documentation", href: "/documentation" },
     { label: "Contact Us", href: "/contact-us" },
