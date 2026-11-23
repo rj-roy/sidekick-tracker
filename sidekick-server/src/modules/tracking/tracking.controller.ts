@@ -27,14 +27,22 @@ const isValidTrackingToken = (value: unknown): value is string =>
 
 const openContext = (req: Request): OpenContext => {
     const { userAgent } = validateUa(req.get("x-client-ua") || req.get("user-agent") || "");
-    const { clientIp } = validateIp(
-        req.get("x-client-ip") || req.get("x-forwarded-for") || req.ip || ""
-    );
+    const { clientIp } = validateIp(req.get("x-client-ip") || req.ip);
     const { os, browser, isMobile } = parseUa(userAgent === "unknown" ? "" : userAgent);
     return { userAgent, ip: clientIp, isMobile, os, browser };
 };
 
 export const TrackingController = {
+    async get(req: Request, res: Response) {
+        if (!req.userId) {
+            throw new ApiError(401, "Authentication required", "SESSION_INVALID");
+        }
+
+        const emails = await TrackingService.getTrackedEmails(req.userId);
+
+        return ApiResponse.success(res, "Tracked emails fetched", emails, 200);
+    },
+
     async markSent(req: Request, res: Response) {
         if (!req.userId) {
             throw new ApiError(401, "Authentication required", "SESSION_INVALID");

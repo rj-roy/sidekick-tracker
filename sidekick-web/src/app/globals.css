@@ -1,32 +1,356 @@
 @import "tailwindcss";
 
+/* next-themes with attribute="class" */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ==========================================================================
+   1. PALETTE SCALES — GitHub Primer
+   Tailwind 50–950 steps mapped from Primer's scales (0 = lightest … 9 = darkest)
+   ========================================================================== */
 @theme {
-  /* Backgrounds */
-  --color-page: #F9F8F5;
-  --color-surface: #FFFFFF;
+  --font-sans: var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
 
-  /* Typography */
-  --color-primary: #202124;
-  --color-secondary: #5F6368;
-  --color-muted: #80868B;
+  /* Brand seeds (GitHub) */
+  --color-brand-primary: #1f883d;
+  /* success green – GitHub's main button */
+  --color-brand-secondary: #0969da;
+  /* accent blue – links */
+  --color-brand-tertiary: #8250df;
+  /* done purple */
+  --color-brand-neutral: #1f2328;
+  /* fg default */
 
-  /* Borders */
-  --color-border: #E3E5E7;
+  /* Primary (green) */
+  --color-primary-50: #dafbe1;
+  --color-primary-100: #aceebb;
+  --color-primary-200: #6fdd8b;
+  --color-primary-300: #4ac26b;
+  --color-primary-400: #2da44e;
+  --color-primary-500: #1a7f37;
+  --color-primary-600: #116329;
+  --color-primary-700: #044f1e;
+  --color-primary-800: #003d16;
+  --color-primary-900: #002d11;
+  --color-primary-950: #001a09;
 
-  /* Signal */
-  --color-signal: #E53935;
-  --color-signal-hover: #C62828;
-  --color-signal-soft: #FDECEC;
+  /* Secondary (blue) */
+  --color-secondary-50: #ddf4ff;
+  --color-secondary-100: #b6e3ff;
+  --color-secondary-200: #80ccff;
+  --color-secondary-300: #54aeff;
+  --color-secondary-400: #218bff;
+  --color-secondary-500: #0969da;
+  --color-secondary-600: #0550ae;
+  --color-secondary-700: #033d8b;
+  --color-secondary-800: #0a3069;
+  --color-secondary-900: #002155;
+  --color-secondary-950: #001a47;
 
-  /* Success */
-  --color-success: #2E7D32;
-  --color-success-soft: #EAF5EC;
+  /* Tertiary (purple) */
+  --color-tertiary-50: #fbefff;
+  --color-tertiary-100: #ecd8ff;
+  --color-tertiary-200: #d8b9ff;
+  --color-tertiary-300: #c297ff;
+  --color-tertiary-400: #a475f9;
+  --color-tertiary-500: #8250df;
+  --color-tertiary-600: #6639ba;
+  --color-tertiary-700: #512a97;
+  --color-tertiary-800: #3e1f79;
+  --color-tertiary-900: #2e1461;
+  --color-tertiary-950: #1b0c3d;
 
-  /* Warning */
-  --color-warning: #B26A00;
-  --color-warning-soft: #FFF4DF;
+  /* Danger (red) */
+  --color-danger-50: #ffebe9;
+  --color-danger-100: #ffcecb;
+  --color-danger-200: #ffaba8;
+  --color-danger-300: #ff8182;
+  --color-danger-400: #fa4549;
+  --color-danger-500: #cf222e;
+  --color-danger-600: #a40e26;
+  --color-danger-700: #82071e;
+  --color-danger-800: #660018;
+  --color-danger-900: #4c0014;
+  --color-danger-950: #2a000b;
 
-  /* Info */
-  --color-info: #2457A6;
-  --color-info-soft: #EAF1FC;
+  /* Neutral (Primer grey) */
+  --color-neutral-50: #f6f8fa;
+  --color-neutral-100: #eaeef2;
+  --color-neutral-200: #d0d7de;
+  --color-neutral-300: #afb8c1;
+  --color-neutral-400: #8c959f;
+  --color-neutral-500: #6e7781;
+  --color-neutral-600: #57606a;
+  --color-neutral-700: #424a53;
+  --color-neutral-800: #32383f;
+  --color-neutral-900: #24292f;
+  --color-neutral-950: #1f2328;
+}
+
+/* ==========================================================================
+   2. SEMANTIC TOKENS — GitHub Light (default) and GitHub Dark
+   ========================================================================== */
+:root {
+  color-scheme: light;
+
+  --background: #ffffff;
+  /* canvas default */
+  --foreground: #1f2328;
+  /* fg default */
+
+  --surface: #ffffff;
+  /* canvas subtle – cards, headers */
+  --muted: #eff2f5;
+  /* inputs bg / neutral muted */
+  --muted-foreground: #59636e;
+  /* fg muted */
+
+  --outline: #d1d9e0;
+  /* default button border */
+  --border: #d1d9e0;
+  /* border default */
+  --ring: #0969da;
+  /* focus ring (accent) */
+
+  --primary: #1f883d;
+  /* success emphasis (green button) */
+  --primary-foreground: #ffffff;
+  --secondary: #0969da;
+  /* accent emphasis */
+  --secondary-foreground: #ffffff;
+  --tertiary: #8250df;
+  /* done emphasis */
+  --tertiary-foreground: #ffffff;
+  --destructive: #cf222e;
+  /* danger emphasis */
+  --destructive-foreground: #ffffff;
+
+  --inverse: #25292e;
+  /* neutral emphasis */
+  --inverse-foreground: #ffffff;
+
+  /* Text colors */
+  --headline: #1f2328;
+  --body: #1f2328;
+  --label: #59636e;
+  --caption: #59636e;
+  --link: #0969da;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --background: #0d1117;
+  /* canvas default */
+  --foreground: #f0f6fc;
+  /* fg default */
+
+  --surface: #0d1117;
+  /* canvas subtle */
+  --muted: #212830;
+  /* neutral muted */
+  --muted-foreground: #9198a1;
+  /* fg muted */
+
+  --outline: #3d444d;
+  --border: #3d444d;
+  /* border default */
+  --ring: #1f6feb;
+  /* focus ring */
+
+  --primary: #238636;
+  /* green button */
+  --primary-foreground: #ffffff;
+  --secondary: #1f6feb;
+  /* accent emphasis */
+  --secondary-foreground: #ffffff;
+  --tertiary: #8957e5;
+  /* done emphasis */
+  --tertiary-foreground: #ffffff;
+  --destructive: #da3633;
+  /* danger emphasis */
+  --destructive-foreground: #ffffff;
+
+  --inverse: #f0f6fc;
+  --inverse-foreground: #0d1117;
+
+  /* Text colors */
+  --headline: #f0f6fc;
+  --body: #f0f6fc;
+  --label: #9198a1;
+  --caption: #9198a1;
+  --link: #4493f8;
+}
+
+/* ==========================================================================
+   3. EXPOSE SEMANTIC TOKENS TO TAILWIND
+   ========================================================================== */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-outline: var(--outline);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-foreground: var(--tertiary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-inverse: var(--inverse);
+  --color-inverse-foreground: var(--inverse-foreground);
+
+  --color-headline: var(--headline);
+  --color-body: var(--body);
+  --color-label: var(--label);
+  --color-caption: var(--caption);
+  --color-link: var(--link);
+  --color-on-brand: #ffffff;
+}
+
+/* ==========================================================================
+   4. BASE
+   ========================================================================== */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--body);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--headline);
+    font-weight: 600;
+  }
+
+  a {
+    color: var(--link);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: -1px;
+  }
+}
+
+/* ==========================================================================
+   5. COMPONENT RECIPES (GitHub-style, 6px radius, 1px borders)
+   ========================================================================== */
+@layer components {
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-inverted,
+  .btn-outlined {
+    border-radius: 6px;
+    font-weight: 500;
+    padding: 5px 16px;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border: 1px solid rgb(31 35 40 / 0.15);
+  }
+
+  .btn-primary:hover {
+    filter: brightness(0.94);
+  }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--muted);
+  }
+
+  .btn-inverted {
+    background: var(--inverse);
+    color: var(--inverse-foreground);
+  }
+
+  .btn-outlined {
+    background: transparent;
+    color: var(--secondary);
+    border: 1px solid var(--border);
+  }
+
+  .input-field {
+    background: var(--background);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 12px;
+  }
+
+  .input-field:focus {
+    border-color: var(--ring);
+    outline: 2px solid var(--ring);
+    outline-offset: -1px;
+  }
+
+  .nav-pill {
+    background: var(--surface);
+    color: var(--muted-foreground);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+
+  .nav-item-active {
+    background: var(--muted);
+    color: var(--foreground);
+    font-weight: 600;
+    border-radius: 6px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+
+  .icon-btn-primary {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .icon-btn-secondary {
+    background: var(--secondary);
+    color: var(--secondary-foreground);
+  }
+
+  .icon-btn-tertiary {
+    background: var(--tertiary);
+    color: var(--tertiary-foreground);
+  }
+
+  .icon-btn-destructive {
+    background: var(--destructive);
+    color: var(--destructive-foreground);
+  }
 }

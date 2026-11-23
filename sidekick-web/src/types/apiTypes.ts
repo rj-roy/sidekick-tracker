@@ -3,4 +3,4 @@ export interface ApiResponse<T> {
   message: string;
   data?: T | null;
   headers?: Headers;
-};
+}

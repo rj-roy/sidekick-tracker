@@ -3,59 +3,78 @@ import { deleteCookie, getCookie, setCookie } from "@/lib/cookies";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
-    const url = new URL(req.url);
-    const error = url.searchParams.get("error");
+  const url = new URL(req.url);
+  const error = url.searchParams.get("error");
 
-    if (error) {
-        return NextResponse.redirect(new URL(`${process.env.CLIENT_BASE}/auth/error?message=${error}`));
-    };
-
-    const cookieNames = ["_ms__i", "o_bh_h",];
-
-    const cookieValues = Object.fromEntries(
-        await Promise.all(cookieNames.map(async (name) => [name, await getCookie(name)] as const))
+  if (error) {
+    return NextResponse.redirect(
+      new URL(`${process.env.CLIENT_BASE}/auth/error?message=${error}`),
     );
+  }
 
-    if (cookieNames.some((name) => !cookieValues[name])) {
-        return NextResponse.redirect(new URL(`${process.env.CLIENT_BASE}/auth/error?message=Failed-to-retrive-cookies`))
-    };
+  const cookieNames = ["_ms__i", "o_bh_h"];
 
-    const paramsState = url.searchParams.get("state");
-    const paramsCode = url.searchParams.get("code");
+  const cookieValues = Object.fromEntries(
+    await Promise.all(
+      cookieNames.map(async (name) => [name, await getCookie(name)] as const),
+    ),
+  );
 
-    const res = await signedFetch
-        <{ user: Record<string, string>, sessionCookies: Record<string, string> }>
-        ('/auth/google/callback', {
-            method: "POST",
-            body: {
-                paramsState,
-                paramsCode,
-                _ms__i: cookieValues._ms__i,
-                o_bh_h: cookieValues.o_bh_h,
-            },
-        });
+  if (cookieNames.some((name) => !cookieValues[name])) {
+    return NextResponse.redirect(
+      new URL(
+        `${process.env.CLIENT_BASE}/auth/error?message=Failed-to-retrive-cookies`,
+      ),
+    );
+  }
 
-        console.log(res);
+  const paramsState = url.searchParams.get("state");
+  const paramsCode = url.searchParams.get("code");
 
-    for (const name of cookieNames) {
-        await deleteCookie(name);
-    };
+  const res = await signedFetch<{
+    user: Record<string, string>;
+    sessionCookies: Record<string, string>;
+  }>("/auth/google/callback", req, {
+    method: "POST",
+    body: {
+      paramsState,
+      paramsCode,
+      _ms__i: cookieValues._ms__i,
+      o_bh_h: cookieValues.o_bh_h,
+    },
+  });
 
-    if (!res.success) {
-        return NextResponse.redirect(new URL(`${process.env.CLIENT_BASE}/auth/error?message=server-error`));
-    };
+  for (const name of cookieNames) {
+    await deleteCookie(name);
+  }
 
-    const { OG_L, T_ls_ } = res.data?.sessionCookies ?? {};
+  if (!res.success) {
+    return NextResponse.redirect(
+      new URL(`${process.env.CLIENT_BASE}/auth/error?message=server-error`),
+    );
+  }
 
-    const cookieMaxAge = 10 * 60 * 1000;
+  const { OG_L, T_ls_ } = res.data?.sessionCookies ?? {};
 
-    if (!OG_L || !T_ls_) {
-        return NextResponse.redirect(new URL(`${process.env.CLIENT_BASE}/auth/error?message=Faild to Retrive Cookies`));
-    };
+  const cookieMaxAge = 10 * 60 * 1000;
 
-    Object.entries(res.data?.sessionCookies ?? {}).forEach(async ([name, value]) => {
-        await setCookie(name, value, cookieMaxAge);
-    });
+  if (!OG_L || !T_ls_) {
+    return NextResponse.redirect(
+      new URL(
+        `${process.env.CLIENT_BASE}/auth/error?message=Faild to Retrive Cookies`,
+      ),
+    );
+  }
 
-    return NextResponse.redirect(new URL(`${process.env.CLIENT_BASE}/auth/success?user=${res.data?.user.name}`));
-};
+  Object.entries(res.data?.sessionCookies ?? {}).forEach(
+    async ([name, value]) => {
+      await setCookie(name, value, cookieMaxAge);
+    },
+  );
+
+  return NextResponse.redirect(
+    new URL(
+      `${process.env.CLIENT_BASE}/auth/success?user=${res.data?.user.name}`,
+    ),
+  );
+}

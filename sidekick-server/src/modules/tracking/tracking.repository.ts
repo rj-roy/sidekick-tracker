@@ -14,6 +14,14 @@ const emailOpens = async () => {
 };
 
 export const TrackingRepository = {
+    async findTrackedEmailsByUserId(userId: ObjectId) {
+        return await (await trackedEmails())
+            .find({ userId })
+            .sort({ createdAt: -1 })
+            .limit(100)
+            .toArray();
+    },
+
     async markTrackedEmailSent(
         uniqueToken: string,
         userId: ObjectId,
