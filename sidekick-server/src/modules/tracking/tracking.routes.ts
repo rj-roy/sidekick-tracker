@@ -7,6 +7,13 @@ import { TrackingController } from "./tracking.controller.js";
 
 const router = Router();
 
+router.get(
+    "/get",
+    authenticator,
+    createRateLimit({ windowMs: 60_000, limit: 60, keyGenerator: userAwareKey }),
+    asyncHandler(TrackingController.get)
+);
+
 // router.post(
 //     "/create",
 //     createRateLimit({ windowMs: 60_000, limit: 30, keyGenerator: userAwareKey }),

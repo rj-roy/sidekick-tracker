@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 export const statusHandler = async <T>(
   res: Response,
-  { redirectOnAuthError = true }: { redirectOnAuthError?: boolean } = {}
+  { redirectOnAuthError = true }: { redirectOnAuthError?: boolean } = {},
 ): Promise<ApiResponse<T>> => {
   const redirectMap: Record<number, string> = {
     401: "/unauthorized",
@@ -21,7 +21,7 @@ export const statusHandler = async <T>(
 
   if (!res.ok || !result?.success) {
     return { success: false, message: result?.message || res.statusText };
-  };
+  }
 
   return { ...result, headers };
 };

@@ -8,6 +8,10 @@ const MAX_SUBJECT_LENGTH = 200;
 const MAX_RECIPIENTS = 100;
 
 export const TrackingService = {
+    async getTrackedEmails(userId: ObjectId) {
+        return await TrackingRepository.findTrackedEmailsByUserId(userId);
+    },
+
     async markTrackedEmailSent(
         token: string,
         userId: ObjectId,

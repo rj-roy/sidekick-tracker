@@ -15,18 +15,23 @@ const FAILURE_MESSAGES: Record<string, string> = {
 
 export default function TrackEmailCard() {
   const [state, setState] = useState<CardState>({ status: "checking" });
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const refresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await new Promise((resolve) => setTimeout(resolve, 150));
     const compose = await send<ComposeState>({ type: GET_COMPOSE_STATE });
 
     if (!compose) {
       setState({ status: "error", message: "Could not reach the Gmail tab." });
+      setIsRefreshing(false);
       return;
     };
 
     setState(compose.trackedToken
       ? { status: "tracked", trackingToken: compose.trackedToken }
       : { status: "idle", compose });
+    setIsRefreshing(false);
   }, []);
 
   useEffect(() => {
@@ -65,29 +70,30 @@ export default function TrackEmailCard() {
   };
 
   return (
-    <div className="rounded-lg border border-border bg-surface">
+    <div className="card">
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
-        <h3 className="text-[12px] font-semibold">Track this email</h3>
+        <h3 className="text-[12px] font-semibold text-headline">Track this email</h3>
 
         <button
           onClick={() => void refresh()}
-          className="rounded p-1 text-muted hover:bg-page hover:text-primary"
+          disabled={isRefreshing}
+          className="rounded-md p-1 text-caption hover:bg-muted hover:text-foreground disabled:opacity-50"
           title="Re-check the open draft"
         >
-          <RefreshCw className="size-3.5" />
+          <RefreshCw className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
         </button>
       </div>
 
       <div className="p-3">
         {state.status === "checking" && (
-          <div className="flex items-center gap-2 text-[11px] text-muted">
+          <div className="flex items-center gap-2 text-[11px] text-caption">
             <Loader2 className="size-3.5 animate-spin" />
             Looking for an open draft...
           </div>
         )}
 
         {state.status === "working" && (
-          <div className="flex items-center gap-2 text-[11px] text-muted">
+          <div className="flex items-center gap-2 text-[11px] text-caption">
             <Loader2 className="size-3.5 animate-spin" />
             Adding the tracking pixel...
           </div>
@@ -97,7 +103,7 @@ export default function TrackEmailCard() {
           <>
             {state.compose.supported ? (
               <>
-                <p className="text-[11px] text-secondary">
+                <p className="text-[11px] text-caption">
                   {state.compose.hasCompose
                     ? `Ready to track${state.compose.subject ? ` "${state.compose.subject}"` : ""}.`
                     : "No compose or reply window is open in Gmail."}
@@ -106,20 +112,20 @@ export default function TrackEmailCard() {
                 <button
                   onClick={() => void handleTrack()}
                   disabled={!state.compose.hasCompose}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-signal px-4 py-2.5 text-[12px] font-semibold text-white transition hover:bg-signal-hover disabled:opacity-50"
+                  className="mt-3 flex w-full items-center justify-center gap-2 btn-primary disabled:opacity-50"
                 >
                   Click to Track this mail
                 </button>
               </>
             ) : (
               <>
-                <p className="text-[11px] text-secondary">
+                <p className="text-[11px] text-caption">
                   Open a draft in Gmail, then come back here to track this mail.
                 </p>
 
                 <button
                   onClick={() => void handleOpenGmail()}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-signal px-4 py-2.5 text-[12px] font-semibold text-white transition hover:bg-signal-hover"
+                  className="mt-3 flex w-full items-center justify-center gap-2 btn-primary"
                 >
                   <ExternalLink className="size-3.5" />
                   Open Gmail
@@ -130,18 +136,18 @@ export default function TrackEmailCard() {
         )}
 
         {state.status === "tracked" && (
-          <div className="flex items-start gap-2 rounded-md bg-success-soft px-2.5 py-2">
-            <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-success" />
+          <div className="flex items-start gap-2 rounded-md bg-muted px-2.5 py-2">
+            <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-primary" />
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold text-success">Tracking is enabled for this email</p>
+              <p className="text-[11px] font-semibold text-primary">Tracking is enabled for this email</p>
             </div>
           </div>
         )}
 
         {state.status === "error" && (
-          <div className="flex items-start gap-2 rounded-md bg-warning-soft px-2.5 py-2">
-            <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-warning" />
-            <p className="text-[11px] text-warning">{state.message}</p>
+          <div className="flex items-start gap-2 rounded-md bg-muted px-2.5 py-2">
+            <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-destructive" />
+            <p className="text-[11px] text-destructive">{state.message}</p>
           </div>
         )}
       </div>

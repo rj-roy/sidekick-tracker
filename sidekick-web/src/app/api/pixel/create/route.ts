@@ -4,62 +4,65 @@ import { NextResponse } from "next/server";
 import { generateToken } from "@/utils/crypto";
 
 export async function POST(req: Request) {
-    if (!isTrustedExtension(req)) {
-        return NextResponse.json({ success: false, message: "unauthorized" }, { status: 401 });
-    };
+  if (!isTrustedExtension(req)) {
+    return NextResponse.json(
+      { success: false, message: "unauthorized" },
+      { status: 401 },
+    );
+  }
 
-    const body = await req.json() as { status: string };
+  const body = (await req.json()) as { status: string };
 
-    if (!body.status) {
-        return NextResponse.json(
-            { success: false, message: "Failed to create tracking pixel [!status]" },
-            { status: 401 }
-        );
-    };
+  if (!body.status) {
+    return NextResponse.json(
+      { success: false, message: "Failed to create tracking pixel [!status]" },
+      { status: 401 },
+    );
+  }
 
-    if (body.status !== "draft") {
-        return NextResponse.json({
-            success: false,
-            message: "Invalid request",
-        });
-    };
-
-    const token = generateToken();
-
+  if (body.status !== "draft") {
     return NextResponse.json({
-        success: true,
-        message: "Tracking pixel created",
-        data: {
-            messageId: crypto.randomUUID(),
-            trackingToken: token,
-            pixelUrl: pixelUrlFor(token),
-        },
+      success: false,
+      message: "Invalid request",
     });
+  }
 
-    // const res = await signedFetch<{ token: string }>("/tracking/create", {
-    //     method: "POST",
-    //     body: {
-    //         token: token,
-    //         ...(typeof body.subject === "string" ? { subject: body.subject } : {}),
-    //         ...(typeof body.recipientCount === "number" ? { recipientCount: body.recipientCount } : {}),
-    //         ...(typeof body.status === "string" ? { status: body.status } : {}),
-    //     },
-    //     redirectOnAuthError: false,
-    // });
+  const token = generateToken();
 
-    // if (!res.success || !res.data?.token) {
-    //     return NextResponse.json(
-    //         { success: false, message: res.message || "Failed to create tracking pixel" },
-    //         { status: res.success ? 502 : 401 }
-    //     );
-    // };
+  return NextResponse.json({
+    success: true,
+    message: "Tracking pixel created",
+    data: {
+      messageId: crypto.randomUUID(),
+      trackingToken: token,
+      pixelUrl: pixelUrlFor(token),
+    },
+  });
 
-    // return NextResponse.json({
-    //     success: true,
-    //     message: "Tracking pixel created",
-    //     data: {
-    //         token: res.data.token,
-    //         pixelUrl: pixelUrlFor(res.data.token),
-    //     },
-    // });
-};
+  // const res = await signedFetch<{ token: string }>("/tracking/create", {
+  //     method: "POST",
+  //     body: {
+  //         token: token,
+  //         ...(typeof body.subject === "string" ? { subject: body.subject } : {}),
+  //         ...(typeof body.recipientCount === "number" ? { recipientCount: body.recipientCount } : {}),
+  //         ...(typeof body.status === "string" ? { status: body.status } : {}),
+  //     },
+  //     redirectOnAuthError: false,
+  // });
+
+  // if (!res.success || !res.data?.token) {
+  //     return NextResponse.json(
+  //         { success: false, message: res.message || "Failed to create tracking pixel" },
+  //         { status: res.success ? 502 : 401 }
+  //     );
+  // };
+
+  // return NextResponse.json({
+  //     success: true,
+  //     message: "Tracking pixel created",
+  //     data: {
+  //         token: res.data.token,
+  //         pixelUrl: pixelUrlFor(res.data.token),
+  //     },
+  // });
+}

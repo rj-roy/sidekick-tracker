@@ -1,6 +1,6 @@
 import Loading from "./Loading";
 import Login from "./Login";
-import Dashboard from "@/feature/dashboard/components/DashBoard";
+import Dashboard from "@/pages/dashboard/components/DashBoard";
 import type { SessionState } from "@/shared/types/AuthType";
 
 interface MainRouteProps {
